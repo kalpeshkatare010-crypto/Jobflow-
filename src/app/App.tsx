@@ -18,6 +18,7 @@ import {
   SignUpPage,
 } from '../auth/pages';
 import { ErrorState, Spinner } from '../components/ui';
+import { UpdateNotice } from './pwa/PwaControls';
 
 /**
  * The preview build (`npm run build:preview`) uses hash URLs (#/jobs) so it
@@ -97,6 +98,7 @@ export function App({ backend = defaultBackend }: { backend?: AuthBackend | null
       <Router>
         <AppRoutes />
       </Router>
+      <UpdateNotice />
     </AuthProvider>
   );
 }

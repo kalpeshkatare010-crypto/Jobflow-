@@ -4,6 +4,7 @@ import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { NAV_ITEMS } from './nav';
 import { Wordmark } from './Logo';
+import { InstallAppButton } from '../pwa/PwaControls';
 
 interface NavListProps {
   collapsed: boolean;
@@ -82,6 +83,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
           <NavList collapsed={collapsed} />
         </nav>
         <div className="flex flex-col gap-3 pt-4">
+          <InstallAppButton collapsed={collapsed} />
           <Credit collapsed={collapsed} />
           <button
             type="button"
@@ -133,7 +135,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
             <nav aria-label="Main navigation" className="flex-1 overflow-y-auto">
               <NavList collapsed={false} onNavigate={onCloseMobile} />
             </nav>
-            <div className="pt-4">
+            <div className="flex flex-col gap-3 pt-4">
+              <InstallAppButton />
               <Credit collapsed={false} />
             </div>
           </div>

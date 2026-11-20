@@ -84,3 +84,22 @@ describe('App shell', () => {
     expect(screen.getByText('This page does not exist')).toBeInTheDocument();
   });
 });
+
+describe('Install button', () => {
+  it('appears only when the browser offers installation', async () => {
+    const { act } = await import('@testing-library/react');
+    renderAt('/');
+    expect(screen.queryByRole('button', { name: 'Install JobFlow app' })).not.toBeInTheDocument();
+    const prompt = new Event('beforeinstallprompt');
+    Object.assign(prompt, {
+      prompt: async () => {},
+      userChoice: Promise.resolve({ outcome: 'accepted' as const }),
+    });
+    act(() => {
+      window.dispatchEvent(prompt);
+    });
+    const button = await screen.findByRole('button', { name: 'Install JobFlow app' });
+    await userEvent.click(button);
+    expect(screen.queryByRole('button', { name: 'Install JobFlow app' })).not.toBeInTheDocument();
+  });
+});
