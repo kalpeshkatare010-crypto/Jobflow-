@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense, useMemo, type CSSProperties } from 'react';
 import { Link } from 'react-router';
 import {
   ClipboardList,
@@ -82,7 +82,7 @@ function StatusBreakdown({ jobs }: { jobs: JobSummary[] }) {
           <span className="text-ink-700">{JOB_STATUS_LABEL[row.status]}</span>
           <span className="h-2 rounded-full bg-ink-900/[0.06]">
             <span
-              className={cn('block h-full rounded-full', STATUS_BAR[row.status])}
+              className={cn('block h-full origin-left animate-grow-x rounded-full', STATUS_BAR[row.status])}
               style={{ width: `${(row.count / max) * 100}%` }}
             />
           </span>
@@ -204,7 +204,7 @@ export function DashboardPage() {
     <div>
       <DemoNotice />
 
-      <section aria-label="Key figures" className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      <section aria-label="Key figures" className="stagger mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <MetricCard wash="lilac" label="Job orders" value={formatNumber(metrics.total)} icon={<ClipboardList className="size-4" />} note="Excluding cancelled" />
         <MetricCard wash="sand" label="Pending" value={formatNumber(metrics.pending)} icon={<Clock3 className="size-4" />} note="Draft, approved or on hold" />
         <MetricCard wash="aqua" label="In production" value={formatNumber(metrics.inProduction)} icon={<Factory className="size-4" />} note="On the floor now" />
@@ -213,7 +213,7 @@ export function DashboardPage() {
         <MetricCard wash="peach" label="Customers" value={formatNumber(DEMO_CUSTOMER_COUNT)} icon={<Users className="size-4" />} note="With at least one job" />
       </section>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
+      <div className="stagger grid grid-cols-1 gap-5 xl:grid-cols-12" style={{ '--stagger-base': '180ms' } as CSSProperties}>
         <Card className="xl:col-span-8">
           <CardHeader
             title="Production overview"

@@ -43,7 +43,8 @@ export function StageTrack({ stages, className }: StageTrackProps) {
           <span
             key={`${stage.name}-${index}`}
             title={`${stage.name} - ${stateWord[stage.state]}`}
-            className={cn('h-full flex-1 rounded-[3px]', segmentStyle[stage.state])}
+            className={cn('h-full flex-1 origin-left animate-grow-x rounded-[3px]', segmentStyle[stage.state])}
+            style={{ animationDelay: `${120 + index * 70}ms` }}
           />
         ))}
       </div>

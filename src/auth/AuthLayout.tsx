@@ -17,7 +17,7 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
         <Wordmark />
       </div>
       <main className="w-full max-w-[400px]">
-        <div className="rounded-[var(--radius-card)] bg-surface p-6 sm:p-8">
+        <div className="animate-rise-in rounded-[var(--radius-card)] bg-surface p-6 sm:p-8">
           <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.02em] text-ink-900">{title}</h1>
           {description ? <p className="mt-1.5 text-sm text-ink-500">{description}</p> : null}
           <div className="mt-6">{children}</div>

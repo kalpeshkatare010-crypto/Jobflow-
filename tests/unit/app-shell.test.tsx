@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { AppRoutes } from '../../src/app/App';
@@ -70,7 +70,8 @@ describe('App shell', () => {
     const dialog = screen.getByRole('dialog', { name: 'Menu' });
     expect(within(dialog).getByRole('link', { name: 'Customers' })).toBeInTheDocument();
     await userEvent.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument();
+    // It slides out, then leaves the page.
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument());
   });
 
   it('shows an honest holding page for modules not built yet', () => {

@@ -55,6 +55,55 @@
   --radius-control: 0.75rem;
 
   --shadow-pop: 0 12px 32px -12px rgb(20 33 61 / 0.28);
+
+  /* Motion: quick and calm, easing out like a part settling into place */
+  --ease-out-soft: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --animate-page-in: page-in 280ms var(--ease-out-soft) both;
+  --animate-rise-in: rise-in 420ms var(--ease-out-soft) both;
+  --animate-fade-in: fade-in 200ms ease-out both;
+  --animate-fade-out: fade-out 180ms ease-in both;
+  --animate-drawer-in: drawer-in 280ms var(--ease-out-soft) both;
+  --animate-drawer-out: drawer-out 200ms ease-in both;
+  --animate-pop-in: pop-in 160ms var(--ease-out-soft) both;
+  --animate-toast-in: toast-in 320ms var(--ease-out-soft) both;
+  --animate-grow-x: grow-x 700ms var(--ease-out-soft) both;
+
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.985); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  @keyframes drawer-in {
+    from { transform: translateX(-100%); }
+    to { transform: none; }
+  }
+  @keyframes drawer-out {
+    from { transform: none; }
+    to { transform: translateX(-100%); }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes grow-x {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
 }
 
 @layer base {
@@ -72,6 +121,36 @@
   }
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  /* Children rise in one after another (first 12; later ones with the 12th).
+     Set --stagger-base on the container to start after an earlier group. */
+  .stagger > * {
+    animation: var(--animate-rise-in);
+    animation-delay: calc(var(--stagger-base, 0ms) + 495ms);
+  }
+  .stagger > :nth-child(1) { animation-delay: calc(var(--stagger-base, 0ms) + 0ms); }
+  .stagger > :nth-child(2) { animation-delay: calc(var(--stagger-base, 0ms) + 45ms); }
+  .stagger > :nth-child(3) { animation-delay: calc(var(--stagger-base, 0ms) + 90ms); }
+  .stagger > :nth-child(4) { animation-delay: calc(var(--stagger-base, 0ms) + 135ms); }
+  .stagger > :nth-child(5) { animation-delay: calc(var(--stagger-base, 0ms) + 180ms); }
+  .stagger > :nth-child(6) { animation-delay: calc(var(--stagger-base, 0ms) + 225ms); }
+  .stagger > :nth-child(7) { animation-delay: calc(var(--stagger-base, 0ms) + 270ms); }
+  .stagger > :nth-child(8) { animation-delay: calc(var(--stagger-base, 0ms) + 315ms); }
+  .stagger > :nth-child(9) { animation-delay: calc(var(--stagger-base, 0ms) + 360ms); }
+  .stagger > :nth-child(10) { animation-delay: calc(var(--stagger-base, 0ms) + 405ms); }
+  .stagger > :nth-child(11) { animation-delay: calc(var(--stagger-base, 0ms) + 450ms); }
+  .stagger > :nth-child(12) { animation-delay: calc(var(--stagger-base, 0ms) + 495ms); }
+  /* Press feedback for anything clickable */
+  .press {
+    transition-property: transform, background-color, color, box-shadow;
+    transition-duration: 160ms;
+    transition-timing-function: var(--ease-out-soft);
+  }
+  .press:active:not(:disabled) {
+    transform: scale(0.97);
   }
 }
 
