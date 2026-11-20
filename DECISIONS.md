@@ -26,6 +26,8 @@ Short record of choices made where the specification left room. Change a decisio
 - **D-16 Team changes are server functions.** Memberships cannot be written directly; `create_business`, `create_invitation`, `accept_invitation`, `change_member_role`, `set_member_permissions` and `revoke_member` check permission themselves. Nobody can become, remove or demote the owner, and only the owner manages admins.
 - **D-17 Demo mode.** With no Supabase settings the app runs without sign-in on sample data. This keeps previews and local development working without accounts.
 
+- **D-18 Installable app first.** The PWA install (manifest, icons, service worker for the app's own files) was brought forward at the owner's request. Business data is never stored in the service-worker cache. New versions wait for the person to tap Reload. A Play Store listing (one-time Google fee) is possible later and needs approval.
+
 ## Architecture corrections (made before the code that depends on them)
 
 - **C-01 Commit-safe sync cursor.** A sequence number assigned at write time is not commit-ordered: a slow transaction can commit a lower number after a device has already pulled past it, and that row would never be downloaded. Each synced row records the writing transaction id (`xid8`). A pull returns rows whose transaction id is at or above the device's checkpoint, and the new checkpoint is `pg_snapshot_xmin(pg_current_snapshot())`, the oldest transaction still running. Rows may be sent twice, never missed; the client merge is idempotent by `id` + `version`.
