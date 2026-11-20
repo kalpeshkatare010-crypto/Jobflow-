@@ -28,6 +28,10 @@ Short record of choices made where the specification left room. Change a decisio
 
 - **D-18 Installable app first.** The PWA install (manifest, icons, service worker for the app's own files) was brought forward at the owner's request. Business data is never stored in the service-worker cache. New versions wait for the person to tap Reload. A Play Store listing (one-time Google fee) is possible later and needs approval.
 
+- **D-19 How offline changes sync.** Each change is saved on the device with an outbox entry in one IndexedDB transaction. Edits record only changed fields and their previous values; the server applies a field if it still holds the previous value, otherwise it reports a conflict and overwrites nothing. A delete of a record edited elsewhere is a conflict. Conflicts show "Needs review" with both values and "Keep yours" / "Keep saved version". Refused changes stay in the outbox marked "Not saved to cloud" with the server's reason. Sync runs on start, on reconnect, when the app comes back into view, after each change and every 60 seconds; failures retry after 2 s doubling to 5 minutes. One browser tab syncs at a time (Web Locks).
+- **D-20 Demo mode keeps data on the device.** Without Supabase settings, customers are saved in a local database named for the demo and never leave the device; the screen says so.
+- **Still to do (Milestone 10):** warn before signing out with unsynced changes and clear the device's data on sign-out or removal from a business.
+
 ## Architecture corrections (made before the code that depends on them)
 
 - **C-01 Commit-safe sync cursor.** A sequence number assigned at write time is not commit-ordered: a slow transaction can commit a lower number after a device has already pulled past it, and that row would never be downloaded. Each synced row records the writing transaction id (`xid8`). A pull returns rows whose transaction id is at or above the device's checkpoint, and the new checkpoint is `pg_snapshot_xmin(pg_current_snapshot())`, the oldest transaction still running. Rows may be sent twice, never missed; the client merge is idempotent by `id` + `version`.

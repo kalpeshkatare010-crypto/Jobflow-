@@ -236,16 +236,25 @@ export function createSupabaseBackend(client: SupabaseClient): AuthBackend {
   };
 }
 
+let sharedClient: SupabaseClient | null | undefined;
+
+/** The one Supabase client for this app, or null when not configured (demo mode). */
+export function supabaseClientFromEnv(): SupabaseClient | null {
+  if (sharedClient !== undefined) return sharedClient;
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  sharedClient =
+    url && anonKey
+      ? createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
+      : null;
+  return sharedClient;
+}
+
 /**
  * Builds the backend from environment settings, or returns null when the app
  * has not been connected to Supabase yet (it then runs in demo mode).
  */
 export function backendFromEnv(): AuthBackend | null {
-  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-  if (!url || !anonKey) return null;
-  const client = createClient(url, anonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-  });
-  return createSupabaseBackend(client);
+  const client = supabaseClientFromEnv();
+  return client ? createSupabaseBackend(client) : null;
 }

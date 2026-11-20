@@ -5,8 +5,12 @@ import { NAV_ITEMS } from './layout/nav';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { ModulePage, NotFoundPage } from '../features/modules/ModulePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
+import { CustomersPage } from '../features/customers/CustomersPage';
 import { AuthProvider, useAuth } from '../auth/AuthProvider';
-import { backendFromEnv } from '../auth/supabaseBackend';
+import { backendFromEnv, supabaseClientFromEnv } from '../auth/supabaseBackend';
+import { createSupabaseSyncApi } from '../sync/supabaseSyncApi';
+import { SyncApiContext } from '../offline/LocalDataProvider';
+import type { SyncApi } from '../sync/engine';
 import type { AuthBackend } from '../auth/types';
 import {
   ChooseBusinessPage,
@@ -80,7 +84,8 @@ export function AppRoutes() {
       <Route element={<RequireWorkspace />}>
         <Route index element={<DashboardPage />} />
         <Route path="settings/*" element={<SettingsPage />} />
-        {NAV_ITEMS.filter((item) => item.path !== '/' && item.path !== '/settings').map((item) => (
+        <Route path="customers/*" element={<CustomersPage />} />
+        {NAV_ITEMS.filter((item) => !['/', '/settings', '/customers'].includes(item.path)).map((item) => (
           <Route key={item.path} path={`${item.path.slice(1)}/*`} element={<ModulePage />} />
         ))}
         <Route path="*" element={<NotFoundPage />} />
@@ -90,15 +95,25 @@ export function AppRoutes() {
 }
 
 const defaultBackend = backendFromEnv();
+const client = supabaseClientFromEnv();
+const defaultSyncApi = client ? createSupabaseSyncApi(client) : null;
 
-export function App({ backend = defaultBackend }: { backend?: AuthBackend | null }): ReactNode {
+export function App({
+  backend = defaultBackend,
+  syncApi = defaultSyncApi,
+}: {
+  backend?: AuthBackend | null;
+  syncApi?: SyncApi | null;
+}): ReactNode {
   const Router = useHashRouter ? HashRouter : BrowserRouter;
   return (
     <AuthProvider backend={backend}>
-      <Router>
-        <AppRoutes />
-      </Router>
-      <UpdateNotice />
+      <SyncApiContext.Provider value={syncApi}>
+        <Router>
+          <AppRoutes />
+        </Router>
+        <UpdateNotice />
+      </SyncApiContext.Provider>
     </AuthProvider>
   );
 }

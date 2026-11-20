@@ -8,6 +8,7 @@ interface HeaderProps {
   subtitle?: ReactNode;
   onOpenMenu: () => void;
   sync: SyncState;
+  onRetrySync?: () => void;
   userName: string;
   businessName: string;
   roleLabel?: string;
@@ -20,6 +21,7 @@ export function Header({
   subtitle,
   onOpenMenu,
   sync,
+  onRetrySync,
   userName,
   businessName,
   roleLabel,
@@ -41,7 +43,7 @@ export function Header({
         {subtitle ? <p className="mt-0.5 text-sm text-ink-500">{subtitle}</p> : null}
       </div>
       <div className="flex items-center gap-2 rounded-full bg-surface p-1.5">
-        <SyncIndicator state={sync} />
+        <SyncIndicator state={sync} onRetry={onRetrySync} />
         <UserMenu
           userName={userName}
           businessName={businessName}

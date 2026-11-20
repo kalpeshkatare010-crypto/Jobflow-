@@ -75,9 +75,9 @@ describe('App shell', () => {
   });
 
   it('shows an honest holding page for modules not built yet', () => {
-    renderAt('/customers');
-    expect(screen.getByRole('heading', { level: 1, name: 'Customers' })).toBeInTheDocument();
-    expect(screen.getByText('Customers is being built')).toBeInTheDocument();
+    renderAt('/inventory');
+    expect(screen.getByRole('heading', { level: 1, name: 'Inventory' })).toBeInTheDocument();
+    expect(screen.getByText('Inventory is being built')).toBeInTheDocument();
   });
 
   it('shows a not-found page for unknown links', () => {

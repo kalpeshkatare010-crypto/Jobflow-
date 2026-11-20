@@ -67,6 +67,8 @@
   --animate-pop-in: pop-in 160ms var(--ease-out-soft) both;
   --animate-toast-in: toast-in 320ms var(--ease-out-soft) both;
   --animate-grow-x: grow-x 700ms var(--ease-out-soft) both;
+  --animate-panel-in: panel-in 300ms var(--ease-out-soft) both;
+  --animate-panel-out: panel-out 200ms ease-in both;
 
   @keyframes page-in {
     from { opacity: 0; transform: translateY(8px); }
@@ -99,6 +101,14 @@
   @keyframes toast-in {
     from { opacity: 0; transform: translateY(16px); }
     to { opacity: 1; transform: none; }
+  }
+  @keyframes panel-in {
+    from { transform: translateX(100%); }
+    to { transform: none; }
+  }
+  @keyframes panel-out {
+    from { transform: none; }
+    to { transform: translateX(100%); }
   }
   @keyframes grow-x {
     from { transform: scaleX(0); }

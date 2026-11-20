@@ -11,7 +11,8 @@ JobFlow helps small manufacturers (5–30 people) manage job orders and track pr
 | 1 | Project, design system, app shell, dashboard with demonstration data | Done |
 | 2 | Sign-in, businesses, roles, invitations, database security | Done (needs your Supabase project to go live: [docs/SETUP.md](docs/SETUP.md)) |
 | PWA | Installable app: icon, full-screen, starts offline, update notice | Done (brought forward) |
-| 3 | Offline database and sync engine | Next |
+| 3 | Offline database and sync engine; Customers screen working offline | Done |
+| 4 | Employee roster and remaining customer details | Next |
 | 4–12 | Customers, jobs, workflows, production, inventory, reports, hardening, PWA, billing, launch | Planned |
 
 Without Supabase settings the app runs in **demo mode**: no sign-in, invented sample data marked "Demo data", and the header says "Not connected". With settings (see [docs/SETUP.md](docs/SETUP.md)) it requires sign-in, business setup and team invitations. The dashboard figures stay sample data until job orders arrive.
@@ -44,6 +45,8 @@ In Cloudflare: Workers & Pages > Create > Import a repository, choose this repos
 src/
   app/            App root, routes, layout (sidebar, header, sync indicator)
   auth/           Sign-in, sign-up, invitations, business selection, Supabase client
+  offline/        Local database (Dexie/IndexedDB), outbox, local customer changes
+  sync/           Sync engine: push, pull, merge, retry, status
   components/ui/  Design system: buttons, fields, cards, badges, tables, states
   domain/         Pure business rules (job metrics, delays, progress)
   features/       One folder per module (dashboard now; more each milestone)

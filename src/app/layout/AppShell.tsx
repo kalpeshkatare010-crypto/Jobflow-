@@ -4,18 +4,21 @@ import { readPreference, writePreference } from '../../lib/storage';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { findNavItem } from './nav';
-import type { SyncState } from './SyncIndicator';
 import { DEMO_SESSION } from '../../features/dashboard/demoData';
 import { useAuth } from '../../auth/AuthProvider';
+import { LocalDataProvider, useLocalData } from '../../offline/LocalDataProvider';
 import { ROLE_LABEL } from '../../auth/types';
 
-/**
- * Until sign-in exists (Milestone 2) the shell runs as a demo session and the
- * sync indicator says "Not connected". It never pretends data is in the cloud.
- */
-const SYNC_STATE: SyncState = { kind: 'not_connected' };
-
+/** The shell plus the business's local database and sync engine. */
 export function AppShell() {
+  return (
+    <LocalDataProvider>
+      <Shell />
+    </LocalDataProvider>
+  );
+}
+
+function Shell() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => readPreference('sidebarCollapsed', false));
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -35,6 +38,7 @@ export function AppShell() {
   const current = findNavItem(location.pathname);
   const isDashboard = location.pathname === '/';
   const auth = useAuth();
+  const local = useLocalData();
   const isDemo = auth.status === 'demo';
   const userName = isDemo ? DEMO_SESSION.userName : auth.user?.fullName || auth.user?.email || 'Signed in';
   const businessName = isDemo ? DEMO_SESSION.businessName : (auth.activeWorkspace?.name ?? '');
@@ -63,7 +67,8 @@ export function AppShell() {
           title={isDashboard ? `Welcome back, ${firstName}` : (current?.label ?? 'Page not found')}
           subtitle={isDashboard ? "Here's what is happening on your shop floor." : current?.summary}
           onOpenMenu={() => setMobileOpen(true)}
-          sync={SYNC_STATE}
+          sync={local.syncState}
+          onRetrySync={local.engine ? () => void local.engine?.syncNow() : undefined}
           userName={userName}
           businessName={businessName}
           roleLabel={auth.activeWorkspace ? ROLE_LABEL[auth.activeWorkspace.role] : undefined}
