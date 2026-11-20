@@ -38,7 +38,7 @@ export function describeSync(state: SyncState, now: Date = new Date()): Presenta
       return {
         icon: <PlugZap aria-hidden className={icon} />,
         label: 'Not connected',
-        detail: 'Demo mode: nothing is saved to the cloud yet',
+        detail: 'Demo mode: changes stay on this device only',
         tone: 'bg-sunken text-ink-700 ring-line',
       };
     case 'connected':

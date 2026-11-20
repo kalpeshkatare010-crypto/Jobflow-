@@ -6,3 +6,4 @@ export { DataTable, type Column } from './DataTable';
 export { MetricCard, type MetricWash } from './MetricCard';
 export { StageTrack, type StageSegment, type StageState } from './StageTrack';
 export { Spinner, Skeleton, EmptyState, ErrorState, DemoTag } from './States';
+export { Panel } from './Panel';
