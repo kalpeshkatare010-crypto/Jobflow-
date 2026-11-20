@@ -32,6 +32,8 @@ Short record of choices made where the specification left room. Change a decisio
 - **D-20 Demo mode keeps data on the device.** Without Supabase settings, customers are saved in a local database named for the demo and never leave the device; the screen says so.
 - **Still to do (Milestone 10):** warn before signing out with unsynced changes and clear the device's data on sign-out or removal from a business.
 
+- **D-21 Android app.** Capacitor wraps the same React build into an APK (app id `com.rkdigitals.jobflow`), so it works offline from the first launch without Chrome. GitHub Actions builds it (Google's Android tools are not reachable from the development workspace) and publishes it on the `android-latest` release. The release signing key lives only in GitHub secrets and with the owner; without it, builds are clearly named TEST. Tauri (Windows) stays post-launch.
+
 ## Architecture corrections (made before the code that depends on them)
 
 - **C-01 Commit-safe sync cursor.** A sequence number assigned at write time is not commit-ordered: a slow transaction can commit a lower number after a device has already pulled past it, and that row would never be downloaded. Each synced row records the writing transaction id (`xid8`). A pull returns rows whose transaction id is at or above the device's checkpoint, and the new checkpoint is `pg_snapshot_xmin(pg_current_snapshot())`, the oldest transaction still running. Rows may be sent twice, never missed; the client merge is idempotent by `id` + `version`.

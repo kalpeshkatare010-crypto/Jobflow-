@@ -1,0 +1,118 @@
+name: Android app
+
+# Builds the JobFlow APK and publishes it on the "Android app" release page:
+# https://github.com/<owner>/<repo>/releases/tag/android-latest
+#
+# Optional repository secrets (Settings > Secrets and variables > Actions):
+#   ANDROID_KEYSTORE_BASE64    - the signing key, as text (docs/ANDROID.md)
+#   ANDROID_KEYSTORE_PASSWORD  - its password
+# With them the APK is a signed release that installs over earlier versions.
+# Without them a test build is made (signed with a temporary key).
+#
+# Optional repository variables (same page, "Variables" tab), to connect the
+# app to your database: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**', 'tests/db/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the app and copy it into the Android project
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: npm run build:android
+
+      - name: Prepare signing key
+        id: signing
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/jobflow.jks"
+            echo "JOBFLOW_KEYSTORE_FILE=$RUNNER_TEMP/jobflow.jks" >> "$GITHUB_ENV"
+            echo "JOBFLOW_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No signing key secrets: building a test APK."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build APK
+        id: build
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          export JOBFLOW_VERSION_NAME="$VERSION"
+          export JOBFLOW_VERSION_CODE="${{ github.run_number }}"
+          cd android
+          chmod +x gradlew
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
+            ./gradlew --no-daemon assembleRelease
+            SRC=app/build/outputs/apk/release/app-release.apk
+            NAME="JobFlow-${VERSION}-build${{ github.run_number }}.apk"
+          else
+            ./gradlew --no-daemon assembleDebug
+            SRC=app/build/outputs/apk/debug/app-debug.apk
+            NAME="JobFlow-${VERSION}-build${{ github.run_number }}-TEST.apk"
+          fi
+          mkdir -p ../release
+          cp "$SRC" "../release/$NAME"
+          echo "file=release/$NAME" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          ls -la ../release
+
+      - name: Keep the APK with this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.name }}
+          path: ${{ steps.build.outputs.file }}
+          retention-days: 30
+
+      - name: Publish on the "Android app" release page
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Latest JobFlow Android app (build ${{ github.run_number }}, commit ${GITHUB_SHA::7}). Download the .apk below on your phone and open it to install."
+          if [ "${{ steps.signing.outputs.signed }}" != "true" ]; then
+            NOTES="$NOTES TEST BUILD: signed with a temporary key. Uninstall it before installing a signed build."
+          fi
+          if gh release view android-latest >/dev/null 2>&1; then
+            gh release edit android-latest --title "JobFlow Android app" --notes "$NOTES" --prerelease
+            for asset in $(gh release view android-latest --json assets --jq '.assets[].name'); do
+              gh release delete-asset android-latest "$asset" --yes
+            done
+          else
+            gh release create android-latest --title "JobFlow Android app" --notes "$NOTES" --prerelease --target "$GITHUB_SHA"
+          fi
+          gh release upload android-latest "${{ steps.build.outputs.file }}" --clobber
