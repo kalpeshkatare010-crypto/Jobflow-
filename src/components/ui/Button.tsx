@@ -32,7 +32,7 @@ const sizes: Record<ButtonSize, string> = {
 export function buttonStyles(variant: ButtonVariant = 'primary', size: ButtonSize = 'md', className?: string): string {
   return cn(
     'inline-flex shrink-0 items-center justify-center rounded-[var(--radius-control)] font-medium whitespace-nowrap',
-    'transition-colors disabled:cursor-not-allowed',
+    'press disabled:cursor-not-allowed',
     variants[variant],
     sizes[size],
     className,

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router';
 import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { cn } from '../../lib/cn';
@@ -25,7 +25,7 @@ function NavList({ collapsed, onNavigate }: NavListProps) {
               title={collapsed ? item.label : undefined}
               className={({ isActive }) =>
                 cn(
-                  'flex h-10 items-center gap-3 rounded-[var(--radius-control)] text-sm font-medium transition-colors',
+                  'press flex h-10 items-center gap-3 rounded-[var(--radius-control)] text-sm font-medium duration-200',
                   collapsed ? 'justify-center px-0' : 'px-3',
                   isActive ? 'bg-signal text-ink-900' : 'text-ink-700 hover:bg-ink-900/5 hover:text-ink-900',
                 )
@@ -53,8 +53,20 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
+const DRAWER_EXIT_MS = 200;
+
 export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobile }: SidebarProps) {
   const closeButton = useRef<HTMLButtonElement>(null);
+  // Keep the drawer on screen briefly after closing so it can slide out.
+  const [drawerMounted, setDrawerMounted] = useState(mobileOpen);
+  useEffect(() => {
+    if (mobileOpen) {
+      setDrawerMounted(true);
+      return;
+    }
+    const timer = window.setTimeout(() => setDrawerMounted(false), DRAWER_EXIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [mobileOpen]);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -105,20 +117,24 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
       </aside>
 
       {/* Phone and tablet: a drawer over the page */}
-      {mobileOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
+      {mobileOpen || drawerMounted ? (
+        <div className="fixed inset-0 z-40 lg:hidden" inert={!mobileOpen || undefined}>
           <button
             type="button"
             aria-label="Close menu"
             tabIndex={-1}
-            className="absolute inset-0 bg-ink-900/40"
+            className={cn('absolute inset-0 bg-ink-900/40', mobileOpen ? 'animate-fade-in' : 'animate-fade-out')}
             onClick={onCloseMobile}
           />
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className="absolute inset-y-0 left-0 flex w-[min(300px,85vw)] flex-col bg-canvas px-4 py-5 shadow-[var(--shadow-pop)]"
+            hidden={!mobileOpen && !drawerMounted}
+            className={cn(
+              'absolute inset-y-0 left-0 flex w-[min(300px,85vw)] flex-col bg-canvas px-4 py-5 shadow-[var(--shadow-pop)]',
+              mobileOpen ? 'animate-drawer-in' : 'animate-drawer-out',
+            )}
           >
             <div className="mb-6 flex items-center justify-between px-1">
               <Wordmark />

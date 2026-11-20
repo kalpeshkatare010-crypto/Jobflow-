@@ -12,7 +12,7 @@ export function InstallAppButton({ collapsed = false }: { collapsed?: boolean })
       onClick={() => void install()}
       title={collapsed ? 'Install JobFlow app' : undefined}
       className={cn(
-        'flex h-10 items-center gap-3 rounded-[var(--radius-control)] bg-surface text-sm font-medium text-ink-900 hover:bg-sunken',
+        'press flex h-10 items-center gap-3 rounded-[var(--radius-control)] bg-surface text-sm font-medium text-ink-900 hover:bg-sunken',
         collapsed ? 'justify-center' : 'px-3',
       )}
     >
@@ -29,7 +29,7 @@ export function UpdateNotice() {
   return (
     <div
       role="status"
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-ink-900 px-4 py-3 text-sm text-white shadow-[var(--shadow-pop)]"
+      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex animate-toast-in max-w-md items-center gap-3 rounded-2xl bg-ink-900 px-4 py-3 text-sm text-white shadow-[var(--shadow-pop)]"
     >
       <RefreshCw aria-hidden className="size-4 shrink-0 text-signal" />
       <p className="flex-1">A new version of JobFlow is ready.</p>

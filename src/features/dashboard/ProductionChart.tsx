@@ -74,9 +74,10 @@ export function ProductionChart({ data }: { data: WeeklyOutput[] }) {
               width={48}
             />
             <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgb(20 33 61 / 0.04)' }} />
-            <Bar isAnimationActive={false} dataKey="good" stackId="output" fill={SERIES[0].color} stroke="#ffffff" strokeWidth={2} />
+            <Bar animationDuration={700} animationEasing="ease-out" dataKey="good" stackId="output" fill={SERIES[0].color} stroke="#ffffff" strokeWidth={2} />
             <Bar
-              isAnimationActive={false}
+              animationDuration={700}
+              animationEasing="ease-out"
               dataKey="rejected"
               stackId="output"
               fill={SERIES[1].color}

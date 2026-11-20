@@ -71,7 +71,9 @@ export function AppShell() {
           canSwitchBusiness={auth.workspaces.length > 1}
         />
         <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
-          <Outlet />
+          <div key={location.pathname} className="animate-page-in">
+            <Outlet />
+          </div>
         </main>
         <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 text-[12px] text-ink-500">
           <span>© 2026 RK Digitals. All rights reserved.</span>

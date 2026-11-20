@@ -43,7 +43,7 @@ export function UserMenu({ userName, businessName, roleLabel, onSignOut, canSwit
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-2 rounded-full pr-1 hover:bg-ink-900/5"
+        className="press flex items-center gap-2 rounded-full pr-1 hover:bg-ink-900/5"
       >
         <span aria-hidden className="grid size-9 place-items-center rounded-full bg-ink-900 text-[13px] font-semibold text-white">
           {initials(userName) || '?'}
@@ -58,7 +58,7 @@ export function UserMenu({ userName, businessName, roleLabel, onSignOut, canSwit
         <div
           id={menuId}
           role="menu"
-          className="absolute right-0 z-30 mt-2 w-60 rounded-xl bg-surface p-1.5 shadow-[var(--shadow-pop)] ring-1 ring-line"
+          className="absolute right-0 z-30 mt-2 w-60 origin-top-right animate-pop-in rounded-xl bg-surface p-1.5 shadow-[var(--shadow-pop)] ring-1 ring-line"
         >
           <div className="px-3 py-2">
             <p className="truncate text-sm font-medium text-ink-900">{businessName}</p>
