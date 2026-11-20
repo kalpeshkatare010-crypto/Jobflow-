@@ -12,6 +12,7 @@ JobFlow helps small manufacturers (5–30 people) manage job orders and track pr
 | 2 | Sign-in, businesses, roles, invitations, database security | Done (needs your Supabase project to go live: [docs/SETUP.md](docs/SETUP.md)) |
 | PWA | Installable app: icon, full-screen, starts offline, update notice | Done (brought forward) |
 | 3 | Offline database and sync engine; Customers screen working offline | Done |
+| Android | APK built by GitHub on every change: [docs/ANDROID.md](docs/ANDROID.md) | Done |
 | 4 | Employee roster and remaining customer details | Next |
 | 4–12 | Customers, jobs, workflows, production, inventory, reports, hardening, PWA, billing, launch | Planned |
 

@@ -18,3 +18,8 @@ coverage/
 # Review screenshots
 *.png
 !public/**/*.png
+
+# Android signing keys
+*.jks
+*.keystore
+keystore*.txt

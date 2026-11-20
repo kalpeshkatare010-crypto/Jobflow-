@@ -13,10 +13,10 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     tailwindcss(),
-    // Installable app + offline start. Disabled in the preview build, which runs
-    // inside hosts that do not allow service workers.
+    // Installable app + offline start. Disabled in the preview build (hosts that
+    // do not allow service workers) and the Android app (files ship in the APK).
     VitePWA({
-          disable: mode === 'preview',
+          disable: mode === 'preview' || mode === 'android',
           registerType: 'prompt',
           injectRegister: false,
           includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
