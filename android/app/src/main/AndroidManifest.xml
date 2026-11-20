@@ -22,7 +22,39 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Links from the home-screen widgets, e.g. com.rkdigitals.jobflow://open/customers?new=1 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/custom_url_scheme" android:host="open" />
+            </intent-filter>
+
         </activity>
+
+        <receiver
+            android:name=".JobFlowSummaryWidget"
+            android:exported="false"
+            android:label="@string/widget_summary_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_summary_info" />
+        </receiver>
+
+        <receiver
+            android:name=".JobFlowCompactWidget"
+            android:exported="false"
+            android:label="@string/widget_compact_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_compact_info" />
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

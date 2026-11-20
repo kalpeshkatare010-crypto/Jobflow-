@@ -7,6 +7,7 @@ import { findNavItem } from './nav';
 import { DEMO_SESSION } from '../../features/dashboard/demoData';
 import { useAuth } from '../../auth/AuthProvider';
 import { LocalDataProvider, useLocalData } from '../../offline/LocalDataProvider';
+import { clearHomeScreenWidgets, useHomeScreenWidgets } from '../widgets';
 import { ROLE_LABEL } from '../../auth/types';
 
 /** The shell plus the business's local database and sync engine. */
@@ -39,6 +40,7 @@ function Shell() {
   const isDashboard = location.pathname === '/';
   const auth = useAuth();
   const local = useLocalData();
+  useHomeScreenWidgets();
   const isDemo = auth.status === 'demo';
   const userName = isDemo ? DEMO_SESSION.userName : auth.user?.fullName || auth.user?.email || 'Signed in';
   const businessName = isDemo ? DEMO_SESSION.businessName : (auth.activeWorkspace?.name ?? '');
@@ -72,7 +74,14 @@ function Shell() {
           userName={userName}
           businessName={businessName}
           roleLabel={auth.activeWorkspace ? ROLE_LABEL[auth.activeWorkspace.role] : undefined}
-          onSignOut={isDemo ? undefined : () => void auth.signOut()}
+          onSignOut={
+            isDemo
+              ? undefined
+              : () => {
+                  clearHomeScreenWidgets();
+                  void auth.signOut();
+                }
+          }
           canSwitchBusiness={auth.workspaces.length > 1}
         />
         <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">

@@ -1,4 +1,5 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { CloudOff, Plus, Search, Users, GitCompareArrows, TriangleAlert } from 'lucide-react';
 import { Badge, Button, Card, DataTable, EmptyState, Input, Panel, Textarea, type Column } from '../../components/ui';
@@ -113,6 +114,16 @@ export function CustomersPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // "?new=1" (from the home-screen widget's + Customer button) opens the form.
+  const [params, setParams] = useSearchParams();
+  const wantsNew = params.get('new') === '1';
+  useEffect(() => {
+    if (!wantsNew) return;
+    setParams({}, { replace: true });
+    if (canEdit) openNew();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsNew]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();

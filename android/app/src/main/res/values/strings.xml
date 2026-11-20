@@ -4,4 +4,8 @@
     <string name="title_activity_main">JobFlow</string>
     <string name="package_name">com.rkdigitals.jobflow</string>
     <string name="custom_url_scheme">com.rkdigitals.jobflow</string>
+    <string name="widget_summary_label">JobFlow summary</string>
+    <string name="widget_summary_description">Jobs in production, delayed jobs and customers, with a quick Add customer button</string>
+    <string name="widget_compact_label">JobFlow status</string>
+    <string name="widget_compact_description">Delayed jobs and changes waiting to sync</string>
 </resources>
