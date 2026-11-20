@@ -21,6 +21,11 @@ Short record of choices made where the specification left room. Change a decisio
 - **D-12 Demo data.** Sample figures exist only in `src/features/dashboard/demoData.ts` and every view of them carries a "Demo data" tag. Demo workspaces will carry `is_demo = true`.
 - **D-13 Unfinished modules.** Show a plain "being built" page with the milestone number. Never fake screens for essential features.
 
+- **D-14 Sign-in.** Email and password through Supabase Auth, with email confirmation and password reset by link. A person can belong to several businesses and picks one. One login can own at most 3 businesses (stops trial abuse).
+- **D-15 Invitations.** The owner (or an admin, for non-admin roles) creates an invitation and gets a one-time link to send by WhatsApp or email. Only the link's SHA-256 hash is stored. It works once, only for the invited email, and expires in 7 days. Sending invitation emails automatically waits for an email provider (needs approval).
+- **D-16 Team changes are server functions.** Memberships cannot be written directly; `create_business`, `create_invitation`, `accept_invitation`, `change_member_role`, `set_member_permissions` and `revoke_member` check permission themselves. Nobody can become, remove or demote the owner, and only the owner manages admins.
+- **D-17 Demo mode.** With no Supabase settings the app runs without sign-in on sample data. This keeps previews and local development working without accounts.
+
 ## Architecture corrections (made before the code that depends on them)
 
 - **C-01 Commit-safe sync cursor.** A sequence number assigned at write time is not commit-ordered: a slow transaction can commit a lower number after a device has already pulled past it, and that row would never be downloaded. Each synced row records the writing transaction id (`xid8`). A pull returns rows whose transaction id is at or above the device's checkpoint, and the new checkpoint is `pg_snapshot_xmin(pg_current_snapshot())`, the oldest transaction still running. Rows may be sent twice, never missed; the client merge is idempotent by `id` + `version`.

@@ -1,0 +1,3 @@
+# Supabase CLI settings. Only used to link this folder to your project and
+# apply migrations; the app itself reads VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.
+project_id = "jobflow"
