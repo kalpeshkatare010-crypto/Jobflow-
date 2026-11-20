@@ -1,4 +1,4 @@
-import { CUSTOMER_FIELDS, newId, type CustomerInput, type CustomerRecord, type JobFlowDB, type OutboxEntry } from './db';
+import { allTables, CUSTOMER_FIELDS, newId, type CustomerInput, type CustomerRecord, type JobFlowDB, type OutboxEntry } from './db';
 import { rebaseCustomer } from './rebase';
 
 /**
@@ -123,7 +123,7 @@ export async function deleteCustomer(db: JobFlowDB, id: string): Promise<void> {
  * device's values again, now based on what the server has.
  */
 export async function resolveCustomerConflict(db: JobFlowDB, conflictId: string, choice: 'mine' | 'theirs'): Promise<void> {
-  await db.transaction('rw', db.customers, db.outbox, db.conflicts, async () => {
+  await db.transaction('rw', allTables(db), async () => {
     const conflict = await db.conflicts.get(conflictId);
     if (!conflict) return;
     await db.conflicts.delete(conflictId);
@@ -142,6 +142,6 @@ export async function resolveCustomerConflict(db: JobFlowDB, conflictId: string,
         await db.outbox.add(outboxEntry('customer.update', conflict.entityId, { changes, base }));
       }
     }
-    await rebaseCustomer(db, conflict.theirs as unknown as CustomerRecord);
+    await rebaseCustomer(db, conflict.theirs as Record<string, unknown> & { id: string });
   });
 }

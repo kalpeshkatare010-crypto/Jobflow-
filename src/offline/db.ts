@@ -35,7 +35,101 @@ export const CUSTOMER_FIELDS = ['name', 'business_name', 'email', 'phone', 'addr
 export type CustomerField = (typeof CUSTOMER_FIELDS)[number];
 export type CustomerInput = { name: string } & Partial<Record<Exclude<CustomerField, 'name'>, string | null>>;
 
-export type MutationType = 'customer.create' | 'customer.update' | 'customer.delete';
+export type MutationType =
+  | 'customer.create'
+  | 'customer.update'
+  | 'customer.delete'
+  | 'employee.create'
+  | 'employee.update'
+  | 'employee.delete'
+  | 'workflow.save'
+  | 'workflow.archive'
+  | 'job.create'
+  | 'job.update'
+  | 'job.transition'
+  | 'job.stage';
+
+/** Common shape of every synced row kept on the device. */
+export interface SyncedRow {
+  id: string;
+  tenant_id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  _sync: SyncMark;
+  _message?: string;
+}
+
+export interface EmployeeRecord extends SyncedRow {
+  name: string;
+  employee_code: string | null;
+  phone: string | null;
+  is_active: boolean;
+}
+
+export interface WorkflowRecord extends SyncedRow {
+  name: string;
+  description: string | null;
+  archived_at: string | null;
+}
+
+export interface WorkflowStageRecord extends SyncedRow {
+  workflow_id: string;
+  name: string;
+  position: number;
+  counts_output: boolean;
+}
+
+export type JobStatusValue = 'draft' | 'approved' | 'in_production' | 'on_hold' | 'completed' | 'delivered' | 'cancelled';
+export type JobPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+export interface JobRecord extends SyncedRow {
+  /** Given by the server; null until the job has synced. */
+  job_number: string | null;
+  customer_id: string;
+  workflow_id: string | null;
+  title: string;
+  product_description: string | null;
+  quantity: number;
+  unit: string;
+  order_date: string;
+  due_date: string | null;
+  priority: JobPriority;
+  status: JobStatusValue;
+  held_from: 'approved' | 'in_production' | null;
+  notes: string | null;
+  instructions: string | null;
+  completed_at: string | null;
+}
+
+export type JobStageStatus = 'not_started' | 'in_progress' | 'done' | 'skipped';
+
+export interface JobStageRecord extends SyncedRow {
+  job_id: string;
+  name: string;
+  position: number;
+  counts_output: boolean;
+  status: JobStageStatus;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface JobEventRecord {
+  id: string;
+  tenant_id: string;
+  job_id: string;
+  kind: 'created' | 'status' | 'stage' | 'edited';
+  from_status: string | null;
+  to_status: string | null;
+  stage_name: string | null;
+  stage_action: string | null;
+  reason: string | null;
+  actor_name: string | null;
+  created_at: string;
+  /** True for a step made on this device that the server has not confirmed yet. */
+  _local?: boolean;
+}
 
 export interface OutboxEntry {
   seq?: number;
@@ -46,6 +140,17 @@ export interface OutboxEntry {
     changes?: Record<string, unknown>;
     base?: Record<string, unknown>;
     baseVersion?: number;
+    /** workflow.save */
+    name?: string;
+    description?: string | null;
+    stages?: Record<string, unknown>[];
+    archived?: boolean;
+    /** job.transition */
+    to?: string;
+    reason?: string;
+    /** job.stage */
+    stageId?: string;
+    action?: 'start' | 'complete' | 'skip' | 'reopen';
   };
   createdAt: string;
   attempts: number;
@@ -66,7 +171,14 @@ export interface ConflictRecord {
   mine: Record<string, unknown>;
   /** The record as the server has it. */
   theirs: Record<string, unknown>;
+  /** The server's explanation, for job steps that could not be applied. */
+  message?: string;
   createdAt: string;
+}
+
+/** Every local table a sync transaction may touch. */
+export function allTables(db: JobFlowDB) {
+  return [db.customers, db.employees, db.workflows, db.workflowStages, db.jobOrders, db.jobStages, db.jobEvents, db.outbox, db.conflicts, db.meta];
 }
 
 export interface MetaRecord {
@@ -79,6 +191,12 @@ export class JobFlowDB extends Dexie {
   outbox!: Table<OutboxEntry, number>;
   conflicts!: Table<ConflictRecord, string>;
   meta!: Table<MetaRecord, string>;
+  employees!: Table<EmployeeRecord, string>;
+  workflows!: Table<WorkflowRecord, string>;
+  workflowStages!: Table<WorkflowStageRecord, string>;
+  jobOrders!: Table<JobRecord, string>;
+  jobStages!: Table<JobStageRecord, string>;
+  jobEvents!: Table<JobEventRecord, string>;
 
   constructor(name: string) {
     super(name);
@@ -88,6 +206,14 @@ export class JobFlowDB extends Dexie {
       outbox: '++seq, &mutationId, entityId, status',
       conflicts: 'id, entityId',
       meta: 'key',
+    });
+    this.version(2).stores({
+      employees: 'id, name, _sync',
+      workflows: 'id, name, _sync',
+      workflowStages: 'id, workflow_id',
+      jobOrders: 'id, status, due_date, customer_id, _sync',
+      jobStages: 'id, job_id',
+      jobEvents: 'id, job_id, created_at',
     });
   }
 }

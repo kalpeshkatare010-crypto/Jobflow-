@@ -1,5 +1,5 @@
-import { getMeta, type CustomerRecord, type JobFlowDB, type OutboxEntry } from '../offline/db';
-import { rebaseCustomer } from '../offline/rebase';
+import { allTables, getMeta, type JobFlowDB, type OutboxEntry } from '../offline/db';
+import { localTable, rebaseRow, SERVER_TABLES, tableForMutation, type ServerTable } from '../offline/rebase';
 
 // -----------------------------------------------------------------------------
 // Wire format (matches public.sync_push / public.sync_pull)
@@ -18,10 +18,12 @@ export interface MutationResult {
   message?: string;
   fields?: string[];
   row?: Record<string, unknown>;
+  /** Child rows that changed with it (stages, history). */
+  related?: Partial<Record<ServerTable, Record<string, unknown>[]>>;
 }
 
 export interface PullResponse {
-  rows: { customers?: Record<string, unknown>[]; employees?: Record<string, unknown>[] };
+  rows: Partial<Record<ServerTable, Record<string, unknown>[]>>;
   hasMore: boolean;
   cursor: Record<string, unknown>;
 }
@@ -248,7 +250,7 @@ export class SyncEngine {
       );
       const byId = new Map(results.map((result) => [result.mutationId, result]));
 
-      await this.db.transaction('rw', this.db.customers, this.db.outbox, this.db.conflicts, async () => {
+      await this.db.transaction('rw', allTables(this.db), async () => {
         for (const entry of slice) {
           const result = byId.get(entry.mutationId);
           if (result) await this.applyResult(entry, result);
@@ -260,10 +262,11 @@ export class SyncEngine {
   }
 
   private async applyResult(entry: OutboxEntry, result: MutationResult): Promise<void> {
+    const table = tableForMutation(entry.type);
     if (result.status === 'rejected') {
       await this.db.outbox.update(entry.seq!, { status: 'rejected', reason: result.reason, message: result.message });
-      const local = await this.db.customers.get(entry.entityId);
-      if (local) await this.db.customers.put({ ...local, _sync: 'rejected', _message: result.message });
+      const local = await localTable(this.db, table).get(entry.entityId);
+      if (local) await localTable(this.db, table).put({ ...local, _sync: 'rejected', _message: result.message });
       return;
     }
 
@@ -276,13 +279,17 @@ export class SyncEngine {
         entityId: entry.entityId,
         reason: result.reason ?? 'conflict',
         fields: result.fields ?? [],
-        mine: entry.payload.changes ?? { deleted: true },
+        mine: entry.payload.changes ?? (entry.type.endsWith('.delete') ? { deleted: true } : { ...entry.payload }),
         theirs: result.row ?? {},
+        message: result.message,
         createdAt: new Date().toISOString(),
       });
     }
 
-    if (result.row) await rebaseCustomer(this.db, result.row as unknown as CustomerRecord);
+    if (result.row) await rebaseRow(this.db, table, result.row as Record<string, unknown> & { id: string });
+    for (const [child, rows] of Object.entries(result.related ?? {})) {
+      for (const row of rows ?? []) await rebaseRow(this.db, child as ServerTable, row as Record<string, unknown> & { id: string });
+    }
   }
 
   /** Download changes since the checkpoint. Rows and the new checkpoint are saved together. */
@@ -290,9 +297,11 @@ export class SyncEngine {
     let cursor = await getMeta<Record<string, unknown>>(this.db, 'pullCursor', {});
     for (let page = 0; page < MAX_PULL_PAGES; page += 1) {
       const response = await this.api.pull(this.tenantId, cursor);
-      await this.db.transaction('rw', this.db.customers, this.db.outbox, this.db.conflicts, this.db.meta, async () => {
-        for (const row of response.rows.customers ?? []) {
-          await rebaseCustomer(this.db, row as unknown as CustomerRecord);
+      await this.db.transaction('rw', allTables(this.db), async () => {
+        for (const table of SERVER_TABLES) {
+          for (const row of response.rows[table] ?? []) {
+            await rebaseRow(this.db, table, row as Record<string, unknown> & { id: string });
+          }
         }
         await this.db.meta.put({ key: 'pullCursor', value: response.cursor });
       });
