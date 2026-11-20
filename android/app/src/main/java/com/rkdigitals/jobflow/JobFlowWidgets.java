@@ -50,10 +50,10 @@ final class JobFlowWidgets {
         views.setTextViewText(R.id.widget_business, data == null ? "Open JobFlow to load" : data.optString("business", "JobFlow"));
         views.setTextViewText(R.id.widget_in_production, count(data, "inProduction"));
         views.setTextViewText(R.id.widget_delayed, count(data, "delayed"));
-        views.setTextViewTextColor(R.id.widget_delayed, data != null && data.optInt("delayed", 0) > 0 ? CRITICAL : INK);
+        views.setTextColor(R.id.widget_delayed, data != null && data.optInt("delayed", 0) > 0 ? CRITICAL : INK);
         views.setTextViewText(R.id.widget_customers, count(data, "customers"));
         views.setTextViewText(R.id.widget_footer, footer(data));
-        views.setTextViewTextColor(R.id.widget_footer, footerColor(data));
+        views.setTextColor(R.id.widget_footer, footerColor(data));
         views.setOnClickPendingIntent(R.id.widget_root, openLink(context, LINK_HOME, 1));
         views.setOnClickPendingIntent(R.id.widget_add_customer, openLink(context, LINK_NEW_CUSTOMER, 2));
         return views;
@@ -63,10 +63,10 @@ final class JobFlowWidgets {
         JSONObject data = snapshot(context);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_compact);
         views.setTextViewText(R.id.widget_compact_delayed, count(data, "delayed"));
-        views.setTextViewTextColor(R.id.widget_compact_delayed, data != null && data.optInt("delayed", 0) > 0 ? CRITICAL : INK);
+        views.setTextColor(R.id.widget_compact_delayed, data != null && data.optInt("delayed", 0) > 0 ? CRITICAL : INK);
         views.setTextViewText(R.id.widget_compact_waiting, count(data, "waitingSync"));
         views.setTextViewText(R.id.widget_compact_footer, data != null && data.optBoolean("demo", false) ? "Demo data" : syncWord(data));
-        views.setTextViewTextColor(R.id.widget_compact_footer, footerColor(data));
+        views.setTextColor(R.id.widget_compact_footer, footerColor(data));
         views.setOnClickPendingIntent(R.id.widget_compact_root, openLink(context, LINK_HOME, 3));
         return views;
     }
