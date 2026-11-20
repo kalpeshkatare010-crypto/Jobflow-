@@ -19,7 +19,13 @@ android {
     }
     // Release signing key comes from GitHub secrets at build time; it is never
     // stored in the repository. See docs/ANDROID.md.
+    // All three signature schemes, so every phone maker's installer accepts it.
     signingConfigs {
+        debug {
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
+        }
         release {
             def keystore = System.getenv("JOBFLOW_KEYSTORE_FILE")
             if (keystore) {
@@ -28,13 +34,16 @@ android {
                 keyAlias System.getenv("JOBFLOW_KEY_ALIAS") ?: "jobflow"
                 keyPassword System.getenv("JOBFLOW_KEYSTORE_PASSWORD")
             }
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
         }
     }
     buildTypes {
         release {
-            if (System.getenv("JOBFLOW_KEYSTORE_FILE")) {
-                signingConfig signingConfigs.release
-            }
+            // A normal (non-debuggable) release build. Without the owner's key it
+            // is signed with the build machine's temporary key (a TEST build).
+            signingConfig System.getenv("JOBFLOW_KEYSTORE_FILE") ? signingConfigs.release : signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
