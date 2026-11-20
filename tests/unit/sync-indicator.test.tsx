@@ -44,3 +44,26 @@ describe('SyncIndicator', () => {
     expect(onRetry).toHaveBeenCalledOnce();
   });
 });
+
+describe('Sync status details', () => {
+  it('explains the state in words when tapped', async () => {
+    render(<SyncIndicator state={{ kind: 'offline', pending: 2 }} now={now} />);
+    await userEvent.click(screen.getByRole('button', { name: /Offline/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Sync status' });
+    expect(dialog).toHaveTextContent('No internet right now. Keep working');
+    expect(dialog).toHaveTextContent('2 changes saved on this device, not yet synced');
+  });
+
+  it('offers Sync now when connected to the cloud, not in demo mode', async () => {
+    const onRetry = vi.fn();
+    const { rerender } = render(<SyncIndicator state={{ kind: 'pending', pending: 1 }} onRetry={onRetry} now={now} />);
+    await userEvent.click(screen.getByRole('button', { name: /waiting/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sync now' }));
+    expect(onRetry).toHaveBeenCalledOnce();
+
+    rerender(<SyncIndicator state={{ kind: 'not_connected' }} onRetry={onRetry} now={now} />);
+    await userEvent.click(screen.getByRole('button', { name: /Not connected/ }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('demo mode');
+    expect(screen.queryByRole('button', { name: 'Sync now' })).not.toBeInTheDocument();
+  });
+});

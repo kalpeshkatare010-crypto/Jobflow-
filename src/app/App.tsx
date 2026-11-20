@@ -23,6 +23,7 @@ import {
 } from '../auth/pages';
 import { ErrorState, Spinner } from '../components/ui';
 import { UpdateNotice } from './pwa/PwaControls';
+import { ThemeProvider } from './theme';
 
 /**
  * The preview build (`npm run build:preview`) uses hash URLs (#/jobs) so it
@@ -107,13 +108,15 @@ export function App({
 }): ReactNode {
   const Router = useHashRouter ? HashRouter : BrowserRouter;
   return (
-    <AuthProvider backend={backend}>
-      <SyncApiContext.Provider value={syncApi}>
-        <Router>
-          <AppRoutes />
-        </Router>
-        <UpdateNotice />
-      </SyncApiContext.Provider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider backend={backend}>
+        <SyncApiContext.Provider value={syncApi}>
+          <Router>
+            <AppRoutes />
+          </Router>
+          <UpdateNotice />
+        </SyncApiContext.Provider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

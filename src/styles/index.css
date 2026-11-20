@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/inter';
 
+/* `dark:` classes apply when <html data-theme="dark"> (set by the theme setting). */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 /*
   JobFlow design tokens.
   Navy ink on a soft grey shop-floor canvas. The one loud colour is
@@ -23,6 +26,10 @@
   --color-sunken: #f6f7f9;
   --color-line: #e3e6eb;
   --color-line-strong: #cfd4dc;
+
+  /* Text on solid ink or signal fills */
+  --color-on-ink: #ffffff;
+  --color-on-signal: #14213d;
 
   /* Signal: the active place */
   --color-signal: #f2d24b;
@@ -114,6 +121,44 @@
     from { transform: scaleX(0); }
     to { transform: scaleX(1); }
   }
+}
+
+/*
+  Dark theme: the same roles, re-stepped for a deep navy room. Signal yellow
+  stays the one loud colour. Chart colours are validated against #172033.
+*/
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-ink-900: #e8ecf4;
+  --color-ink-700: #c2c9d8;
+  --color-ink-500: #8e98ad;
+  --color-ink-400: #6e7891;
+  --color-ink-200: #3a4560;
+  --color-canvas: #0f1524;
+  --color-surface: #172033;
+  --color-sunken: #1d2840;
+  --color-line: #26324a;
+  --color-line-strong: #34415c;
+  --color-on-ink: #0f1524;
+  --color-signal-soft: #3a3418;
+  --color-signal-ink: #f5de7a;
+  --color-wash-peach: #2e2219;
+  --color-wash-lilac: #241f3a;
+  --color-wash-aqua: #16302f;
+  --color-wash-mint: #172c21;
+  --color-wash-rose: #321b1c;
+  --color-wash-sand: #2c2817;
+  --color-good: #4cc38a;
+  --color-good-soft: #13291f;
+  --color-warning: #e3a13b;
+  --color-warning-soft: #2f2412;
+  --color-critical: #f07167;
+  --color-critical-soft: #33191a;
+  --color-info: #7c9cf5;
+  --color-info-soft: #1a2443;
+  --color-series-1: #6a8bf0;
+  --color-series-2: #cf7433;
+  --shadow-pop: 0 16px 40px -12px rgb(0 0 0 / 0.6);
 }
 
 @layer base {

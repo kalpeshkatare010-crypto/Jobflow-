@@ -1,5 +1,5 @@
 import { CircleCheck, CloudOff, LoaderCircle, PlugZap, RefreshCw, TriangleAlert, CloudUpload, GitCompareArrows } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 import { formatRelativeTime } from '../../lib/format';
 
@@ -91,25 +91,73 @@ export function describeSync(state: SyncState, now: Date = new Date()): Presenta
 
 interface SyncIndicatorProps {
   state: SyncState;
+  /** Start a sync now (absent in demo mode). */
   onRetry?: () => void;
   now?: Date;
 }
 
+/** Plain-words explanation shown when the status is tapped. */
+function explain(state: SyncState): string {
+  switch (state.kind) {
+    case 'not_connected':
+      return 'This copy of JobFlow is in demo mode. What you add is saved on this device only and is not sent to the cloud.';
+    case 'connected':
+      return 'Everything you saved on this device is also safely in the cloud.';
+    case 'syncing':
+      return 'Sending your changes to the cloud and fetching changes from your team.';
+    case 'pending':
+      return 'These changes are saved on this device. They will be sent to the cloud in a moment.';
+    case 'offline':
+      return 'No internet right now. Keep working: everything is saved on this device and is sent when you are back online.';
+    case 'failed':
+      return 'The last try did not finish. Your changes are kept on this device and JobFlow will try again by itself.';
+    case 'conflict':
+      return 'Someone else changed the same record at the same time. Open the record marked "Needs review" to choose which version to keep.';
+  }
+}
+
 export function SyncIndicator({ state, onRetry, now }: SyncIndicatorProps) {
   const view = describeSync(state, now);
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const panelId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const canSyncNow = onRetry && state.kind !== 'syncing' && state.kind !== 'not_connected';
+
   return (
-    <div className="flex items-center gap-1.5">
-      <div
-        role="status"
-        aria-live="polite"
-        title={view.detail}
-        className={cn('flex h-9 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset', view.tone)}
+    <div ref={root} className="relative flex items-center gap-1.5">
+      <span role="status" aria-live="polite" className="sr-only">
+        {view.label}
+        {view.detail ? `. ${view.detail}` : ''}
+      </span>
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((value) => !value)}
+        className={cn('press flex h-9 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset', view.tone)}
       >
         {view.icon}
         <span className="hidden sm:inline">{view.label}</span>
-        <span className="sr-only sm:hidden">{view.label}</span>
-        {view.detail ? <span className="sr-only">. {view.detail}</span> : null}
-      </div>
+        <span className="sr-only sm:hidden">Sync status: {view.label}</span>
+      </button>
       {state.kind === 'failed' && onRetry ? (
         <button
           type="button"
@@ -119,6 +167,34 @@ export function SyncIndicator({ state, onRetry, now }: SyncIndicatorProps) {
           <RefreshCw aria-hidden className="size-4" />
           <span className="sr-only">Retry sync</span>
         </button>
+      ) : null}
+      {open ? (
+        <div
+          id={panelId}
+          role="dialog"
+          aria-label="Sync status"
+          className="absolute top-11 right-0 z-30 w-[min(300px,calc(100vw-32px))] origin-top-right animate-pop-in rounded-xl bg-surface p-4 text-left shadow-[var(--shadow-pop)] ring-1 ring-line"
+        >
+          <p className={cn('inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[13px] font-medium ring-1 ring-inset', view.tone)}>
+            {view.icon}
+            {view.label}
+          </p>
+          <p className="mt-3 text-sm text-ink-700">{explain(state)}</p>
+          {view.detail && state.kind !== 'not_connected' ? <p className="mt-2 text-[13px] text-ink-500">{view.detail}</p> : null}
+          {canSyncNow ? (
+            <button
+              type="button"
+              onClick={() => {
+                onRetry?.();
+                setOpen(false);
+              }}
+              className="press mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-ink-900 text-[13px] font-medium text-on-ink hover:bg-ink-700"
+            >
+              <RefreshCw aria-hidden className="size-4" />
+              Sync now
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

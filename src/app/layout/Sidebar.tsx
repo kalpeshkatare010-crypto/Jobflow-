@@ -27,7 +27,7 @@ function NavList({ collapsed, onNavigate }: NavListProps) {
                 cn(
                   'press flex h-10 items-center gap-3 rounded-[var(--radius-control)] text-sm font-medium duration-200',
                   collapsed ? 'justify-center px-0' : 'px-3',
-                  isActive ? 'bg-signal text-ink-900' : 'text-ink-700 hover:bg-ink-900/5 hover:text-ink-900',
+                  isActive ? 'bg-signal text-on-signal' : 'text-ink-700 hover:bg-ink-900/5 hover:text-ink-900',
                 )
               }
             >
@@ -123,7 +123,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, mobileOpen, onCloseMobil
             type="button"
             aria-label="Close menu"
             tabIndex={-1}
-            className={cn('absolute inset-0 bg-ink-900/40', mobileOpen ? 'animate-fade-in' : 'animate-fade-out')}
+            className={cn('absolute inset-0 bg-black/40', mobileOpen ? 'animate-fade-in' : 'animate-fade-out')}
             onClick={onCloseMobile}
           />
           <div

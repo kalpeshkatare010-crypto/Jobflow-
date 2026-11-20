@@ -56,7 +56,7 @@ export function Panel({ open, title, onClose, children, footer }: PanelProps) {
         tabIndex={-1}
         aria-label="Close panel"
         onClick={onClose}
-        className={cn('absolute inset-0 bg-ink-900/30', open ? 'animate-fade-in' : 'animate-fade-out')}
+        className={cn('absolute inset-0 bg-black/35', open ? 'animate-fade-in' : 'animate-fade-out')}
       />
       <section
         role="dialog"

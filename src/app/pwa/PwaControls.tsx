@@ -29,14 +29,14 @@ export function UpdateNotice() {
   return (
     <div
       role="status"
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex animate-toast-in max-w-md items-center gap-3 rounded-2xl bg-ink-900 px-4 py-3 text-sm text-white shadow-[var(--shadow-pop)]"
+      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex animate-toast-in max-w-md items-center gap-3 rounded-2xl bg-ink-900 px-4 py-3 text-sm text-on-ink shadow-[var(--shadow-pop)]"
     >
       <RefreshCw aria-hidden className="size-4 shrink-0 text-signal" />
       <p className="flex-1">A new version of JobFlow is ready.</p>
-      <button type="button" onClick={applyUpdate} className="rounded-lg bg-signal px-3 py-1.5 font-medium text-ink-900">
+      <button type="button" onClick={applyUpdate} className="rounded-lg bg-signal px-3 py-1.5 font-medium text-on-signal">
         Reload
       </button>
-      <button type="button" onClick={dismiss} className="grid size-8 place-items-center rounded-lg hover:bg-white/10">
+      <button type="button" onClick={dismiss} className="grid size-8 place-items-center rounded-lg hover:bg-on-ink/10">
         <X aria-hidden className="size-4" />
         <span className="sr-only">Later</span>
       </button>

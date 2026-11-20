@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowLeftRight, LogOut, Plus } from 'lucide-react';
 import { initials } from '../../lib/format';
+import { ThemePicker } from '../ThemePicker';
 
 interface UserMenuProps {
   userName: string;
@@ -45,7 +46,7 @@ export function UserMenu({ userName, businessName, roleLabel, onSignOut, canSwit
         onClick={() => setOpen((value) => !value)}
         className="press flex items-center gap-2 rounded-full pr-1 hover:bg-ink-900/5"
       >
-        <span aria-hidden className="grid size-9 place-items-center rounded-full bg-ink-900 text-[13px] font-semibold text-white">
+        <span aria-hidden className="grid size-9 place-items-center rounded-full bg-ink-900 text-[13px] font-semibold text-on-ink">
           {initials(userName) || '?'}
         </span>
         <span className="hidden flex-col text-left leading-tight md:flex">
@@ -58,11 +59,14 @@ export function UserMenu({ userName, businessName, roleLabel, onSignOut, canSwit
         <div
           id={menuId}
           role="menu"
-          className="absolute right-0 z-30 mt-2 w-60 origin-top-right animate-pop-in rounded-xl bg-surface p-1.5 shadow-[var(--shadow-pop)] ring-1 ring-line"
+          className="absolute right-0 z-30 mt-2 w-64 origin-top-right animate-pop-in rounded-xl bg-surface p-1.5 shadow-[var(--shadow-pop)] ring-1 ring-line"
         >
           <div className="px-3 py-2">
             <p className="truncate text-sm font-medium text-ink-900">{businessName}</p>
             {roleLabel ? <p className="text-[12px] text-ink-500">{roleLabel}</p> : null}
+          </div>
+          <div className="px-1.5 pb-1.5">
+            <ThemePicker />
           </div>
           {canSwitch ? (
             <Link role="menuitem" to="/choose-business" className={item} onClick={() => setOpen(false)}>

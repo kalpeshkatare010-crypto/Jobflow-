@@ -2,6 +2,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import type { TooltipContentProps } from 'recharts';
 import { formatNumber, formatPercent } from '../../lib/format';
 import { rejectionRate } from '../../domain/jobs';
+import { useTheme } from '../../app/theme';
 
 export interface WeeklyOutput {
   week: string;
@@ -10,10 +11,15 @@ export interface WeeklyOutput {
 }
 
 // Hex values, not CSS variables: SVG fill attributes do not resolve var().
-// Keep in sync with --color-series-1/2 in styles/index.css.
+// Keep in sync with --color-series-1/2 in styles/index.css (both themes validated).
+const PALETTE = {
+  light: { good: '#3b5bdb', rejected: '#c2621a', grid: '#e3e6eb', tick: '#646d82', surface: '#ffffff' },
+  dark: { good: '#6a8bf0', rejected: '#cf7433', grid: '#26324a', tick: '#8e98ad', surface: '#172033' },
+};
+
 const SERIES = [
-  { key: 'good', label: 'Good output', color: '#3b5bdb' },
-  { key: 'rejected', label: 'Rejected', color: '#c2621a' },
+  { key: 'good', label: 'Good output', color: 'var(--color-series-1)' },
+  { key: 'rejected', label: 'Rejected', color: 'var(--color-series-2)' },
 ] as const;
 
 function ChartTooltip({ active, payload, label }: Partial<TooltipContentProps<number, string>>) {
@@ -44,6 +50,7 @@ function compact(value: number) {
 }
 
 export function ProductionChart({ data }: { data: WeeklyOutput[] }) {
+  const colors = PALETTE[useTheme().resolved];
   return (
     <div>
       <ul className="mb-3 flex flex-wrap gap-4 text-[13px] text-ink-700" aria-label="Legend">
@@ -57,31 +64,31 @@ export function ProductionChart({ data }: { data: WeeklyOutput[] }) {
       <div className="h-[240px]" aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 4, right: 16, bottom: 0, left: -12 }} barCategoryGap="28%">
-            <CartesianGrid vertical={false} stroke="#e3e6eb" />
+            <CartesianGrid vertical={false} stroke={colors.grid} />
             <XAxis
               dataKey="week"
               tickLine={false}
               axisLine={false}
-              tick={{ fill: '#646d82', fontSize: 12 }}
+              tick={{ fill: colors.tick, fontSize: 12 }}
               interval="preserveStartEnd"
               minTickGap={16}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tick={{ fill: '#646d82', fontSize: 12 }}
+              tick={{ fill: colors.tick, fontSize: 12 }}
               tickFormatter={compact}
               width={48}
             />
             <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgb(20 33 61 / 0.04)' }} />
-            <Bar animationDuration={700} animationEasing="ease-out" dataKey="good" stackId="output" fill={SERIES[0].color} stroke="#ffffff" strokeWidth={2} />
+            <Bar animationDuration={700} animationEasing="ease-out" dataKey="good" stackId="output" fill={colors.good} stroke={colors.surface} strokeWidth={2} />
             <Bar
               animationDuration={700}
               animationEasing="ease-out"
               dataKey="rejected"
               stackId="output"
-              fill={SERIES[1].color}
-              stroke="#ffffff"
+              fill={colors.rejected}
+              stroke={colors.surface}
               strokeWidth={2}
               radius={[4, 4, 0, 0]}
             />

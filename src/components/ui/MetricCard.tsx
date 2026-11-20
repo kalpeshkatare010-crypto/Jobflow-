@@ -5,12 +5,12 @@ import { Skeleton } from './States';
 export type MetricWash = 'peach' | 'lilac' | 'aqua' | 'mint' | 'rose' | 'sand';
 
 const washes: Record<MetricWash, { card: string; icon: string }> = {
-  peach: { card: 'bg-wash-peach', icon: 'bg-white/70 text-[#9a4a12]' },
-  lilac: { card: 'bg-wash-lilac', icon: 'bg-white/70 text-[#4b3aa8]' },
-  aqua: { card: 'bg-wash-aqua', icon: 'bg-white/70 text-[#13696e]' },
-  mint: { card: 'bg-wash-mint', icon: 'bg-white/70 text-good' },
-  rose: { card: 'bg-wash-rose', icon: 'bg-white/70 text-critical' },
-  sand: { card: 'bg-wash-sand', icon: 'bg-white/70 text-[#6e5a1c]' },
+  peach: { card: 'bg-wash-peach', icon: 'bg-surface/70 text-[#9a4a12] dark:text-[#f0a86e]' },
+  lilac: { card: 'bg-wash-lilac', icon: 'bg-surface/70 text-[#4b3aa8] dark:text-[#b3a6f5]' },
+  aqua: { card: 'bg-wash-aqua', icon: 'bg-surface/70 text-[#13696e] dark:text-[#6fd0d4]' },
+  mint: { card: 'bg-wash-mint', icon: 'bg-surface/70 text-good' },
+  rose: { card: 'bg-wash-rose', icon: 'bg-surface/70 text-critical' },
+  sand: { card: 'bg-wash-sand', icon: 'bg-surface/70 text-[#6e5a1c] dark:text-[#e3c56a]' },
 };
 
 interface MetricCardProps {

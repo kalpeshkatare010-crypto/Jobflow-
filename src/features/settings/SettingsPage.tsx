@@ -1,4 +1,5 @@
-import { Card, EmptyState } from '../../components/ui';
+import { Card, CardHeader, EmptyState } from '../../components/ui';
+import { ThemePicker } from '../../app/ThemePicker';
 import { TeamSection } from '../team/TeamSection';
 import { useAuth } from '../../auth/AuthProvider';
 import { Settings } from 'lucide-react';
@@ -8,6 +9,10 @@ export function SettingsPage() {
   const { status } = useAuth();
   return (
     <div className="flex flex-col gap-5">
+      <Card>
+        <CardHeader title="Appearance" description="Auto follows your phone or computer's light or dark setting." />
+        <ThemePicker className="max-w-sm" />
+      </Card>
       {status === 'demo' ? (
         <Card>
           <EmptyState
