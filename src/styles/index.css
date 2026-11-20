@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+
+/*
+  JobFlow design tokens.
+  Navy ink on a soft grey shop-floor canvas. The one loud colour is
+  "signal" yellow, borrowed from floor safety markings, and it is only used
+  for the active place in the app (current nav item, current stage).
+*/
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Ink (text and primary actions) */
+  --color-ink-900: #14213d;
+  --color-ink-700: #37425e;
+  --color-ink-500: #646d82;
+  --color-ink-400: #8a91a2;
+  --color-ink-200: #c9cdd6;
+
+  /* Surfaces */
+  --color-canvas: #eef0f3;
+  --color-surface: #ffffff;
+  --color-sunken: #f6f7f9;
+  --color-line: #e3e6eb;
+  --color-line-strong: #cfd4dc;
+
+  /* Signal: the active place */
+  --color-signal: #f2d24b;
+  --color-signal-soft: #fbf1c4;
+  --color-signal-ink: #5c4a00;
+
+  /* Pastel metric washes */
+  --color-wash-peach: #fcebdc;
+  --color-wash-lilac: #ece8fb;
+  --color-wash-aqua: #dcf1f2;
+  --color-wash-mint: #e2f1e4;
+  --color-wash-rose: #f8e2e1;
+  --color-wash-sand: #f3eddc;
+
+  /* Status (always paired with an icon or label, never colour alone) */
+  --color-good: #1e7a4a;
+  --color-good-soft: #e1f2e8;
+  --color-warning: #9a5b00;
+  --color-warning-soft: #fbeed5;
+  --color-critical: #b8322a;
+  --color-critical-soft: #f9e3e1;
+  --color-info: #2f55c8;
+  --color-info-soft: #e5ecfb;
+
+  /* Chart series (validated: CVD and contrast checks pass on white) */
+  --color-series-1: #3b5bdb;
+  --color-series-2: #c2621a;
+
+  --radius-card: 1.25rem;
+  --radius-control: 0.75rem;
+
+  --shadow-pop: 0 12px 32px -12px rgb(20 33 61 / 0.28);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink-900 antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-info);
+    outline-offset: 2px;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

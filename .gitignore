@@ -1,0 +1,20 @@
+node_modules/
+dist/
+dist-preview/
+coverage/
+*.log
+.DS_Store
+
+# Local secrets
+.env
+.env.local
+.env.*.local
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Review screenshots
+*.png
+!public/**/*.png
