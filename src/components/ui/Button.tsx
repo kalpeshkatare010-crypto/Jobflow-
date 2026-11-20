@@ -28,6 +28,17 @@ const sizes: Record<ButtonSize, string> = {
   md: 'h-10 px-4 text-sm gap-2',
 };
 
+/** Button look for elements that must be links (navigation), e.g. <Link className={buttonStyles()}>. */
+export function buttonStyles(variant: ButtonVariant = 'primary', size: ButtonSize = 'md', className?: string): string {
+  return cn(
+    'inline-flex shrink-0 items-center justify-center rounded-[var(--radius-control)] font-medium whitespace-nowrap',
+    'transition-colors disabled:cursor-not-allowed',
+    variants[variant],
+    sizes[size],
+    className,
+  );
+}
+
 export function Button({
   variant = 'primary',
   size = 'md',
@@ -46,13 +57,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-[var(--radius-control)] font-medium whitespace-nowrap',
-        'transition-colors disabled:cursor-not-allowed',
-        variants[variant],
-        sizes[size],
-        className,
-      )}
+      className={buttonStyles(variant, size, className)}
       {...rest}
     >
       {loading ? <LoaderCircle aria-hidden className="size-4 animate-spin" /> : icon}

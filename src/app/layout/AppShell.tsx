@@ -6,6 +6,8 @@ import { Header } from './Header';
 import { findNavItem } from './nav';
 import type { SyncState } from './SyncIndicator';
 import { DEMO_SESSION } from '../../features/dashboard/demoData';
+import { useAuth } from '../../auth/AuthProvider';
+import { ROLE_LABEL } from '../../auth/types';
 
 /**
  * Until sign-in exists (Milestone 2) the shell runs as a demo session and the
@@ -32,7 +34,11 @@ export function AppShell() {
 
   const current = findNavItem(location.pathname);
   const isDashboard = location.pathname === '/';
-  const firstName = DEMO_SESSION.userName.split(' ')[0];
+  const auth = useAuth();
+  const isDemo = auth.status === 'demo';
+  const userName = isDemo ? DEMO_SESSION.userName : auth.user?.fullName || auth.user?.email || 'Signed in';
+  const businessName = isDemo ? DEMO_SESSION.businessName : (auth.activeWorkspace?.name ?? '');
+  const firstName = userName.split(/[\s@]/)[0];
 
   useEffect(() => {
     document.title = current && !isDashboard ? `${current.label} - JobFlow` : 'JobFlow';
@@ -58,8 +64,11 @@ export function AppShell() {
           subtitle={isDashboard ? "Here's what is happening on your shop floor." : current?.summary}
           onOpenMenu={() => setMobileOpen(true)}
           sync={SYNC_STATE}
-          userName={DEMO_SESSION.userName}
-          businessName={DEMO_SESSION.businessName}
+          userName={userName}
+          businessName={businessName}
+          roleLabel={auth.activeWorkspace ? ROLE_LABEL[auth.activeWorkspace.role] : undefined}
+          onSignOut={isDemo ? undefined : () => void auth.signOut()}
+          canSwitchBusiness={auth.workspaces.length > 1}
         />
         <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
           <Outlet />

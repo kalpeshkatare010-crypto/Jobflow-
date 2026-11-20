@@ -24,6 +24,7 @@ import {
   type Column,
 } from '../../components/ui';
 import { cn } from '../../lib/cn';
+import { useAuth } from '../../auth/AuthProvider';
 import { describeDue, formatNumber, formatPercent, formatRelativeTime, formatShortDate, daysUntil } from '../../lib/format';
 import {
   computeJobMetrics,
@@ -54,6 +55,7 @@ const STATUS_BAR: Record<string, string> = {
 };
 
 function DemoNotice() {
+  const { status } = useAuth();
   return (
     <div
       role="note"
@@ -61,8 +63,10 @@ function DemoNotice() {
     >
       <FlaskConical aria-hidden className="mt-0.5 size-4 shrink-0 text-warning" />
       <p>
-        <span className="font-medium text-ink-900">You are looking at demonstration data.</span> These jobs, customers
-        and figures are invented samples. Your own records will replace them once your business is set up.
+        <span className="font-medium text-ink-900">You are looking at demonstration data.</span>{' '}
+        {status === 'signed_in'
+          ? 'Your business is set up. These sample jobs and figures stay here, marked "Demo data", until your own job orders replace them in a coming update.'
+          : 'These jobs, customers and figures are invented samples. Your own records will replace them once your business is set up.'}
       </p>
     </div>
   );
