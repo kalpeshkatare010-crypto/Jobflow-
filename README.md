@@ -33,14 +33,9 @@ npm run typecheck  # checks the TypeScript code
 npm run build      # builds the production site into dist/
 ```
 
-## Deploy (Cloudflare Pages, free)
+## Deploy (Cloudflare, free)
 
-1. Push this project to a GitHub repository.
-2. In Cloudflare: Workers & Pages > Create > Pages > Connect to Git, choose the repository.
-3. Build settings: framework preset **None**, build command `npm run build`, output folder `dist`, environment variable `NODE_VERSION` = `22`.
-4. Save. Every push to `main` deploys; every pull request gets a preview link.
-
-`public/_redirects` makes links like `/jobs` work when opened directly.
+In Cloudflare: Workers & Pages > Create > Import a repository, choose this repository, build command `npm run build`, deploy command `npx wrangler deploy`. Every push to `main` redeploys. `wrangler.jsonc` serves `dist/` and sends unknown paths (e.g. `/jobs`) to the app. Full steps: [docs/SETUP.md](docs/SETUP.md).
 
 ## Project layout
 

@@ -35,7 +35,7 @@ Short record of choices made where the specification left room. Change a decisio
 - **C-05 Server functions.** Privileged helpers live in a `private` schema that is not exposed through the API, are `security definer` with `set search_path = ''`, and have `execute` revoked from `public` and `anon`. Sync functions are `security invoker`, so Row Level Security still applies to every row they touch.
 - **C-06 Subscription enforcement.** The sync and write functions check the tenant's subscription state on the server. Expired workspaces can still upload work done during the grace period but cannot create new jobs.
 - **C-07 Backups on the free tier.** Supabase Free has no automatic backups, so a scheduled GitHub Action runs a daily `pg_dump`, encrypts it and stores it as a private workflow artifact. Restore is tested before launch. Supabase Pro (paid, needs approval) before the first paying customer.
-- **C-08 Hosting.** Cloudflare Pages, not Vercel Hobby (Hobby forbids commercial use).
+- **C-08 Hosting.** Cloudflare (Workers static assets, free; Cloudflare's current replacement for Pages), not Vercel Hobby (Hobby forbids commercial use).
 
 ## Technical notes
 

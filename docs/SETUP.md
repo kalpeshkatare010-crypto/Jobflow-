@@ -35,26 +35,26 @@ You will copy a few values between websites. Keep a private note open to paste t
 
 3. Open the **Actions** tab → **Deploy database** → **Run workflow**. When it shows a green tick, the tables and security rules are in your database.
 
-## 4. Put the website on Cloudflare Pages
+## 4. Put the website on Cloudflare (free)
 
-1. Go to **dash.cloudflare.com**, sign up free, open **Workers & Pages → Create → Pages → Connect to Git**, choose your JobFlow repository.
-2. Build settings:
-   - Framework preset: **None**
+1. Go to **dash.cloudflare.com**, sign up free, open **Workers & Pages → Create → Import a repository**, choose your JobFlow repository.
+2. Settings (the repository's `wrangler.jsonc` does the rest):
+   - Project name: `jobflow`
    - Build command: `npm run build`
-   - Build output directory: `dist`
-3. Environment variables (add each):
-   - `NODE_VERSION` = `22`
+   - Deploy command: `npx wrangler deploy`
+3. **Deploy**. Cloudflare gives you an address like `https://jobflow.<your-name>.workers.dev`.
+4. To connect the database, open the project → **Settings → Build → Variables and secrets** (build variables, not runtime ones) and add:
    - `VITE_SUPABASE_URL` = your Project URL
    - `VITE_SUPABASE_ANON_KEY` = your anon public key
-4. **Save and Deploy**. Cloudflare gives you an address like `https://jobflow-xyz.pages.dev`.
+   Then **Deployments → Retry/Redeploy** so the site is rebuilt with them.
 
 ## 5. Tell Supabase where the website lives
 
 In Supabase: **Authentication → URL Configuration**
 
-- Site URL: your Cloudflare address, e.g. `https://jobflow-xyz.pages.dev`
+- Site URL: your Cloudflare address, e.g. `https://jobflow.your-name.workers.dev`
 - Redirect URLs, add both:
-  - `https://jobflow-xyz.pages.dev/**`
+  - `https://jobflow.your-name.workers.dev/**`
   - `http://localhost:5173/**` (for testing on a computer)
 
 This makes the "confirm your email" and "reset password" links open JobFlow.
