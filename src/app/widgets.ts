@@ -5,7 +5,8 @@ import { isNativeApp } from './native';
 import { useLocalData } from '../offline/LocalDataProvider';
 import { useAuth } from '../auth/AuthProvider';
 import { buildDemoJobs, DEMO_SESSION } from '../features/dashboard/demoData';
-import { computeJobMetrics } from '../domain/jobs';
+import { computeJobMetrics, type JobSummary } from '../domain/jobs';
+import { toSummary, useJobViews } from '../features/jobs/jobData';
 import { describeSync, type SyncState } from './layout/SyncIndicator';
 
 /**
@@ -56,14 +57,16 @@ export function buildWidgetSnapshot(input: {
   demo: boolean;
   customers: number;
   sync: SyncState;
+  /** The business's own jobs. When there are none, sample figures are shown and marked as demo. */
+  jobs?: JobSummary[];
   now?: Date;
 }): WidgetSnapshot {
   const now = input.now ?? new Date();
-  // Jobs are sample data until job orders arrive (Milestone 5).
-  const metrics = computeJobMetrics(buildDemoJobs(now), now);
+  const real = input.jobs && input.jobs.length > 0 ? input.jobs : null;
+  const metrics = computeJobMetrics(real ?? buildDemoJobs(now), now);
   return {
     business: input.business,
-    demo: input.demo,
+    demo: input.demo || real === null,
     inProduction: metrics.inProduction,
     delayed: metrics.delayed,
     customers: input.customers,
@@ -80,14 +83,16 @@ export function useHomeScreenWidgets(): void {
   const { status, activeWorkspace } = useAuth();
   const customers = useLiveQuery(async () => (await db.customers.toArray()).filter((c) => !c.deleted_at).length, [db]);
   const native = useMemo(() => isNativeApp(), []);
+  const views = useJobViews(db);
 
   useEffect(() => {
-    if (!native || customers === undefined) return;
+    if (!native || customers === undefined || views === undefined) return;
     const snapshot = buildWidgetSnapshot({
       business: status === 'demo' ? DEMO_SESSION.businessName : (activeWorkspace?.name ?? 'JobFlow'),
-      // Job figures are samples in every mode until job orders exist.
-      demo: true,
+      // Demo mode is always marked; a signed-in business is marked only while it has no jobs yet.
+      demo: status === 'demo',
       customers,
+      jobs: views.map(toSummary),
       sync: syncState,
     });
     const timer = window.setTimeout(() => {
@@ -96,7 +101,7 @@ export function useHomeScreenWidgets(): void {
       });
     }, 800);
     return () => window.clearTimeout(timer);
-  }, [native, customers, syncState, status, activeWorkspace]);
+  }, [native, customers, views, syncState, status, activeWorkspace]);
 }
 
 /** Forget widget figures (on sign-out), so the next person does not see them. */

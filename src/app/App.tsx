@@ -6,6 +6,9 @@ import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { ModulePage, NotFoundPage } from '../features/modules/ModulePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { CustomersPage } from '../features/customers/CustomersPage';
+import { JobsPage } from '../features/jobs/JobsPage';
+import { EmployeesPage } from '../features/employees/EmployeesPage';
+import { WorkflowsPage } from '../features/workflows/WorkflowsPage';
 import { AuthProvider, useAuth } from '../auth/AuthProvider';
 import { backendFromEnv, supabaseClientFromEnv } from '../auth/supabaseBackend';
 import { createSupabaseSyncApi } from '../sync/supabaseSyncApi';
@@ -86,7 +89,10 @@ export function AppRoutes() {
         <Route index element={<DashboardPage />} />
         <Route path="settings/*" element={<SettingsPage />} />
         <Route path="customers/*" element={<CustomersPage />} />
-        {NAV_ITEMS.filter((item) => !['/', '/settings', '/customers'].includes(item.path)).map((item) => (
+        <Route path="jobs/*" element={<JobsPage />} />
+        <Route path="employees/*" element={<EmployeesPage />} />
+        <Route path="workflows/*" element={<WorkflowsPage />} />
+        {NAV_ITEMS.filter((item) => !['/', '/settings', '/customers', '/jobs', '/employees', '/workflows'].includes(item.path)).map((item) => (
           <Route key={item.path} path={`${item.path.slice(1)}/*`} element={<ModulePage />} />
         ))}
         <Route path="*" element={<NotFoundPage />} />

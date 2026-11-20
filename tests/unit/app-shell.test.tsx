@@ -16,10 +16,10 @@ function renderAt(path: string) {
 }
 
 describe('App shell', () => {
-  it('shows the dashboard with a clear demonstration-data notice', () => {
+  it('shows the dashboard with a clear demonstration-data notice', async () => {
     renderAt('/');
     expect(screen.getByRole('heading', { level: 1, name: /Welcome back/ })).toBeInTheDocument();
-    expect(screen.getByRole('note')).toHaveTextContent('You are looking at demonstration data.');
+    expect(await screen.findByRole('note')).toHaveTextContent('You are looking at demonstration data.');
     expect(screen.getAllByText('Demo data').length).toBeGreaterThan(0);
   });
 

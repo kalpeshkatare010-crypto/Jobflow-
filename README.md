@@ -13,10 +13,12 @@ JobFlow helps small manufacturers (5–30 people) manage job orders and track pr
 | PWA | Installable app: icon, full-screen, starts offline, update notice | Done (brought forward) |
 | 3 | Offline database and sync engine; Customers screen working offline | Done |
 | Android | APK built by GitHub on every change: [docs/ANDROID.md](docs/ANDROID.md) | Done |
-| 4 | Employee roster and remaining customer details | Next |
-| 4–12 | Customers, jobs, workflows, production, inventory, reports, hardening, PWA, billing, launch | Planned |
+| 4 | Employee roster (shop-floor workers, no login needed) | Done |
+| 5–6 | Your own production workflows (stages in your words); job orders with status, stages and history, all offline | Done |
+| 7 | Production entries: produced and rejected quantities per stage | Next |
+| 8–12 | Inventory, reports and CSV, hardening, billing, launch | Planned |
 
-Without Supabase settings the app runs in **demo mode**: no sign-in, invented sample data marked "Demo data", and the header says "Not connected". With settings (see [docs/SETUP.md](docs/SETUP.md)) it requires sign-in, business setup and team invitations. The dashboard figures stay sample data until job orders arrive.
+Without Supabase settings the app runs in **demo mode**: no sign-in, invented sample data marked "Demo data", and the header says "Not connected". With settings (see [docs/SETUP.md](docs/SETUP.md)) it requires sign-in, business setup and team invitations. The dashboard shows sample figures only until the business creates its first job order; after that every figure is real.
 
 ## Run it on a computer
 

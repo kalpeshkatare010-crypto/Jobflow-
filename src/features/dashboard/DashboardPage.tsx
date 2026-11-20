@@ -24,6 +24,10 @@ import {
   type Column,
 } from '../../components/ui';
 import { cn } from '../../lib/cn';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useLocalData } from '../../offline/LocalDataProvider';
+import { toSummary, UNNUMBERED, useJobViews } from '../jobs/jobData';
+import { JOB_STATUS_LABEL as STATUS_TEXT } from '../../components/ui';
 import { useAuth } from '../../auth/AuthProvider';
 import { describeDue, formatNumber, formatPercent, formatRelativeTime, formatShortDate, daysUntil } from '../../lib/format';
 import {
@@ -65,7 +69,7 @@ function DemoNotice() {
       <p>
         <span className="font-medium text-ink-900">You are looking at demonstration data.</span>{' '}
         {status === 'signed_in'
-          ? 'Your business is set up. These sample jobs and figures stay here, marked "Demo data", until your own job orders replace them in a coming update.'
+          ? 'Your business is set up. These sample jobs and figures stay here, marked "Demo data", until you create your first job order.'
           : 'These jobs, customers and figures are invented samples. Your own records will replace them once your business is set up.'}
       </p>
     </div>
@@ -137,7 +141,7 @@ function Deadlines({ jobs, today }: { jobs: JobSummary[]; today: Date }) {
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-medium text-ink-900">
-                {job.jobNumber} - {job.title}
+                {job.jobNumber === UNNUMBERED ? job.title : `${job.jobNumber} - ${job.title}`}
               </p>
               <p className={cn('text-[12px]', tone)}>{describeDue(job.dueDate, today)}</p>
             </div>
@@ -148,11 +152,54 @@ function Deadlines({ jobs, today }: { jobs: JobSummary[]; today: Date }) {
   );
 }
 
+function ComingSoon({ title, text }: { title: string; text: string }) {
+  return (
+    <Card>
+      <CardHeader title={title} />
+      <p className="text-[13px] text-ink-500">{text}</p>
+    </Card>
+  );
+}
+
+function Quiet({ text }: { text: string }) {
+  return <p className="text-[13px] text-ink-500">{text}</p>;
+}
+
+/** The business's own recent job history, newest first. */
+function useRecentActivity() {
+  const { db } = useLocalData();
+  return useLiveQuery(async () => {
+    const [events, jobs] = await Promise.all([db.jobEvents.orderBy('created_at').reverse().limit(6).toArray(), db.jobOrders.toArray()]);
+    const byId = new Map(jobs.map((j) => [j.id, j]));
+    return events.map((e) => {
+      const job = byId.get(e.job_id);
+      const name = job?.job_number ?? (job ? `“${job.title}”` : 'a job');
+      let what = `updated ${name}`;
+      if (e.kind === 'created') what = `created ${name}`;
+      else if (e.kind === 'edited') what = `edited ${name}`;
+      else if (e.kind === 'status') what = `moved ${name} to ${STATUS_TEXT[e.to_status as keyof typeof STATUS_TEXT] ?? e.to_status}`;
+      else if (e.kind === 'stage') {
+        const verb = { start: 'started', complete: 'finished', skip: 'skipped', reopen: 'reopened' }[e.stage_action ?? ''] ?? 'updated';
+        what = `${verb} ${e.stage_name ?? 'a stage'} on ${name}`;
+      }
+      return { id: e.id, who: e.actor_name ?? (e._local ? 'You' : 'Someone'), what, at: new Date(e.created_at) };
+    });
+  }, [db]);
+}
+
 export function DashboardPage() {
   const today = useMemo(() => new Date(), []);
-  const jobs = useMemo(() => buildDemoJobs(today), [today]);
+  const { db } = useLocalData();
+  const views = useJobViews(db);
+  const customerCount = useLiveQuery(async () => (await db.customers.toArray()).filter((c) => !c.deleted_at).length, [db]);
+  const activity = useRecentActivity();
+  const realJobs = useMemo(() => (views && views.length > 0 ? views.map(toSummary) : null), [views]);
+  const demo = realJobs === null;
+  const demoJobs = useMemo(() => buildDemoJobs(today), [today]);
+  const jobs = realJobs ?? demoJobs;
   const weekly = useMemo(() => buildDemoWeeklyOutput(today), [today]);
   const metrics = computeJobMetrics(jobs, today);
+  const tag = demo ? <DemoTag /> : undefined;
 
   const lastWeek = weekly[weekly.length - 1];
   const weekRejection = lastWeek ? rejectionRate(lastWeek.good, lastWeek.rejected) : 0;
@@ -174,6 +221,7 @@ export function DashboardPage() {
     {
       key: 'progress',
       header: 'Progress',
+      hideOnMobile: true,
       render: (job) => {
         const current = job.stages.find((stage) => stage.state === 'current');
         const done = job.stages.filter((stage) => stage.state === 'done').length;
@@ -181,7 +229,9 @@ export function DashboardPage() {
           <span className="text-[13px]">
             {current ? current.name : done === job.stages.length ? 'All stages done' : 'Not started'}
             <span className="block text-[12px] text-ink-500">
-              {formatNumber(job.producedQty)} of {formatNumber(job.quantity)} {job.unit} finished
+              {demo
+                ? `${formatNumber(job.producedQty)} of ${formatNumber(job.quantity)} ${job.unit} finished`
+                : `${done} of ${job.stages.length} stages done`}
             </span>
           </span>
         );
@@ -202,7 +252,7 @@ export function DashboardPage() {
 
   return (
     <div>
-      <DemoNotice />
+      {views === undefined ? null : demo ? <DemoNotice /> : null}
 
       <section aria-label="Key figures" className="stagger mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <MetricCard wash="lilac" label="Job orders" value={formatNumber(metrics.total)} icon={<ClipboardList className="size-4" />} note="Excluding cancelled" />
@@ -210,23 +260,32 @@ export function DashboardPage() {
         <MetricCard wash="aqua" label="In production" value={formatNumber(metrics.inProduction)} icon={<Factory className="size-4" />} note="On the floor now" />
         <MetricCard wash="mint" label="Completed" value={formatNumber(metrics.completed)} icon={<CircleCheck className="size-4" />} note="Completed or delivered" />
         <MetricCard wash="rose" label="Delayed" value={formatNumber(metrics.delayed)} icon={<TriangleAlert className="size-4" />} note="Past due, still open" />
-        <MetricCard wash="peach" label="Customers" value={formatNumber(DEMO_CUSTOMER_COUNT)} icon={<Users className="size-4" />} note="With at least one job" />
+        <MetricCard wash="peach" label="Customers" value={formatNumber(demo ? DEMO_CUSTOMER_COUNT : (customerCount ?? 0))} icon={<Users className="size-4" />} note={demo ? 'With at least one job' : 'Saved customers'} />
       </section>
 
       <div className="stagger grid grid-cols-1 gap-5 xl:grid-cols-12" style={{ '--stagger-base': '180ms' } as CSSProperties}>
-        <Card className="xl:col-span-8">
-          <CardHeader
-            title="Production overview"
-            description={`Last 8 weeks, all stages. Rejection rate this week: ${formatPercent(weekRejection)}`}
-            action={<DemoTag />}
-          />
-          <Suspense fallback={<Skeleton className="h-[268px] w-full" />}>
-            <ProductionChart data={weekly} />
-          </Suspense>
-        </Card>
+        {demo ? (
+          <Card className="xl:col-span-8">
+            <CardHeader
+              title="Production overview"
+              description={`Last 8 weeks, all stages. Rejection rate this week: ${formatPercent(weekRejection)}`}
+              action={tag}
+            />
+            <Suspense fallback={<Skeleton className="h-[268px] w-full" />}>
+              <ProductionChart data={weekly} />
+            </Suspense>
+          </Card>
+        ) : (
+          <div className="xl:col-span-8">
+            <ComingSoon
+              title="Production overview"
+              text="Weekly good and rejected output will show here once production entries are added in the next update."
+            />
+          </div>
+        )}
 
         <Card className="xl:col-span-4">
-          <CardHeader title="Jobs by status" description={`${jobs.length} job orders`} action={<DemoTag />} />
+          <CardHeader title="Jobs by status" description={`${jobs.length} job orders`} action={tag} />
           <StatusBreakdown jobs={jobs} />
         </Card>
 
@@ -234,14 +293,18 @@ export function DashboardPage() {
           <CardHeader
             title="On the floor"
             description="Each bar is one job's own stages, from its workflow"
-            action={<DemoTag />}
+            action={tag}
           />
-          <OnTheFloor jobs={jobs} today={today} />
+          {jobs.some((j) => j.status === 'in_production' || j.status === 'on_hold') ? (
+            <OnTheFloor jobs={jobs} today={today} />
+          ) : (
+            <Quiet text="No job is in production right now. Start a stage on an approved job and it appears here." />
+          )}
         </Card>
 
         <Card className="xl:col-span-4">
-          <CardHeader title="Upcoming deadlines" description="Open jobs due in the next 7 days" action={<DemoTag />} />
-          <Deadlines jobs={jobs} today={today} />
+          <CardHeader title="Upcoming deadlines" description="Open jobs due in the next 7 days" action={tag} />
+          {upcomingDeadlines(jobs, today, 7).length > 0 ? <Deadlines jobs={jobs} today={today} /> : <Quiet text="Nothing due in the next 7 days." />}
         </Card>
 
         <Card className="xl:col-span-8">
@@ -253,42 +316,63 @@ export function DashboardPage() {
               </Link>
             }
           />
-          <DataTable caption="Recent job orders (demonstration data)" columns={columns} rows={recent} rowKey={(job) => job.id} />
+          <DataTable caption={demo ? 'Recent job orders (demonstration data)' : 'Recent job orders'} columns={columns} rows={recent} rowKey={(job) => job.id} />
         </Card>
 
         <div className="flex min-w-0 flex-col gap-5 xl:col-span-4">
-          <Card>
-            <CardHeader title="Recent activity" action={<DemoTag />} />
-            <ul className="flex flex-col gap-3">
-              {DEMO_ACTIVITY.map((item) => (
-                <li key={item.id} className="text-[13px] leading-snug">
-                  <p className="text-ink-700">
-                    <span className="font-medium text-ink-900">{item.who}</span> {item.what}
-                  </p>
-                  <p className="text-[12px] text-ink-500">
-                    {formatRelativeTime(new Date(today.getTime() - item.minutesAgo * 60000), today)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </Card>
-          <Card>
-            <CardHeader title="Low stock" description="Below the minimum you set" action={<DemoTag />} />
-            <ul className="flex flex-col gap-3">
-              {DEMO_LOW_STOCK.map((item) => (
-                <li key={item.id} className="flex items-center gap-3 text-[13px]">
-                  <PackageX aria-hidden className="size-4 shrink-0 text-critical" />
-                  <span className="min-w-0 flex-1 truncate text-ink-900">{item.material}</span>
-                  <span className="tabular shrink-0 text-ink-500">
-                    <span className="font-medium text-critical">
-                      {formatNumber(item.onHand)} {item.unit}
-                    </span>{' '}
-                    of {formatNumber(item.minimum)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          {demo ? (
+            <>
+              <Card>
+                <CardHeader title="Recent activity" action={tag} />
+                <ul className="flex flex-col gap-3">
+                  {DEMO_ACTIVITY.map((item) => (
+                    <li key={item.id} className="text-[13px] leading-snug">
+                      <p className="text-ink-700">
+                        <span className="font-medium text-ink-900">{item.who}</span> {item.what}
+                      </p>
+                      <p className="text-[12px] text-ink-500">
+                        {formatRelativeTime(new Date(today.getTime() - item.minutesAgo * 60000), today)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+              <Card>
+                <CardHeader title="Low stock" description="Below the minimum you set" action={tag} />
+                <ul className="flex flex-col gap-3">
+                  {DEMO_LOW_STOCK.map((item) => (
+                    <li key={item.id} className="flex items-center gap-3 text-[13px]">
+                      <PackageX aria-hidden className="size-4 shrink-0 text-critical" />
+                      <span className="min-w-0 flex-1 truncate text-ink-900">{item.material}</span>
+                      <span className="tabular shrink-0 text-ink-500">
+                        <span className="font-medium text-critical">
+                          {formatNumber(item.onHand)} {item.unit}
+                        </span>{' '}
+                        of {formatNumber(item.minimum)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </>
+          ) : (
+            <>
+              <Card>
+                <CardHeader title="Recent activity" />
+                <ul className="flex flex-col gap-3">
+                  {(activity ?? []).map((item) => (
+                    <li key={item.id} className="text-[13px] leading-snug">
+                      <p className="text-ink-700">
+                        <span className="font-medium text-ink-900">{item.who}</span> {item.what}
+                      </p>
+                      <p className="text-[12px] text-ink-500">{formatRelativeTime(item.at, today)}</p>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+              <ComingSoon title="Low stock" text="Stock levels and low-stock alerts arrive with the inventory update." />
+            </>
+          )}
         </div>
       </div>
     </div>

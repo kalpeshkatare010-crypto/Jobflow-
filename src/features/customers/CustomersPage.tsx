@@ -1,8 +1,9 @@
+import { SyncBadge } from '../../components/SyncBadge';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CloudOff, Plus, Search, Users, GitCompareArrows, TriangleAlert } from 'lucide-react';
-import { Badge, Button, Card, DataTable, EmptyState, Input, Panel, Textarea, type Column } from '../../components/ui';
+import { Plus, Search, Users } from 'lucide-react';
+import { Button, Card, DataTable, EmptyState, Input, Panel, Textarea, type Column } from '../../components/ui';
 import { useLocalData } from '../../offline/LocalDataProvider';
 import { useAuth } from '../../auth/AuthProvider';
 import { CUSTOMER_FIELDS, type ConflictRecord, type CustomerField, type CustomerRecord } from '../../offline/db';
@@ -38,31 +39,6 @@ function formFrom(record: CustomerRecord): FormValues {
 }
 
 /** What the badge says about where a customer's latest change stands. */
-function SyncBadge({ record, localOnly }: { record: CustomerRecord; localOnly: boolean }) {
-  if (record._sync === 'conflict') {
-    return (
-      <Badge tone="critical" icon={<GitCompareArrows aria-hidden className="size-3" />}>
-        Needs review
-      </Badge>
-    );
-  }
-  if (record._sync === 'rejected') {
-    return (
-      <Badge tone="critical" icon={<TriangleAlert aria-hidden className="size-3" />}>
-        Not saved to cloud
-      </Badge>
-    );
-  }
-  if (record._sync === 'pending' && !localOnly) {
-    return (
-      <Badge tone="warning" icon={<CloudOff aria-hidden className="size-3" />}>
-        On this device
-      </Badge>
-    );
-  }
-  return null;
-}
-
 function ConflictCard({ conflict, onResolve }: { conflict: ConflictRecord; onResolve: (choice: 'mine' | 'theirs') => void }) {
   const fields = conflict.fields.length > 0 ? conflict.fields : [];
   const isDelete = conflict.type === 'customer.delete';
@@ -205,7 +181,7 @@ export function CustomersPage() {
     },
     { key: 'phone', header: 'Phone', render: (c) => c.phone ?? '' },
     { key: 'email', header: 'Email', hideOnMobile: true, render: (c) => c.email ?? '' },
-    { key: 'sync', header: '', align: 'right', render: (c) => <SyncBadge record={c} localOnly={localOnly} /> },
+    { key: 'sync', header: '', align: 'right', render: (c) => <SyncBadge mark={c._sync} localOnly={localOnly} /> },
   ];
 
   const field = (name: CustomerField, extra: { required?: boolean; type?: string; autoComplete?: string } = {}) => (

@@ -50,3 +50,6 @@ Short record of choices made where the specification left room. Change a decisio
 - Package versions are those current on 2026-11-20 (React 19, React Router 8, Vite 8, Tailwind 4, TypeScript 7, Vitest 5).
 - Chart colours are validated for colour-blind separation and contrast; SVG fills use hex values because SVG attributes do not resolve CSS variables.
 - The preview build (`npm run build:preview`) uses hash URLs so it runs from any static host; production uses clean URLs with `public/_redirects`.
+- The dashboard and the Android widgets show sample jobs, marked "Demo data", only while the business has no job orders of its own. From the first real job they show real counts; production output and low stock show "coming in a next update" cards until production entries (Milestone 7) and inventory (Milestone 8) exist, instead of sample figures beside real ones.
+- Job numbers are given by the server so two offline phones can never pick the same number. A job created offline shows "Not numbered yet" until it syncs; in demo mode it keeps that label, because demo jobs never leave the device.
+- Job stages are worked from the job's own panel (Start, Done, Skip, Reopen). Starting a stage on an approved job moves it to In production on the device and again on the server. Recording produced and rejected quantities per stage comes with production entries in Milestone 7.

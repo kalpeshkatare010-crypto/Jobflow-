@@ -56,7 +56,7 @@ export function DataTable<Row>({
 
   return (
     <div className="-mx-5 overflow-x-auto sm:-mx-6">
-      <table className="w-full min-w-[480px] border-collapse text-sm" aria-busy={loading || undefined}>
+      <table className="w-full border-collapse sm:min-w-[480px] text-sm" aria-busy={loading || undefined}>
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="border-b border-line">
