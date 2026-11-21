@@ -6,6 +6,7 @@ import {
   type AuthUser,
   type Invitation,
   type Member,
+  type PlatformStats,
   type MemberRole,
   type SubscriptionStatus,
   type Workspace,
@@ -192,6 +193,17 @@ export function createSupabaseBackend(client: SupabaseClient): AuthBackend {
         return;
       }
       throw new UserFacingError('This sign-in link is not valid any more. Try again.', 'no_session');
+    },
+
+    async isPlatformAdmin() {
+      const { data, error } = await client.rpc('am_platform_admin');
+      return !error && data === true;
+    },
+
+    async platformStats() {
+      const { data, error } = await client.rpc('platform_stats');
+      if (error) throw fromDatabase(error);
+      return data as PlatformStats;
     },
 
     async requestPasswordReset(email) {

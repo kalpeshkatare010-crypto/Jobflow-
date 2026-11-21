@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowLeftRight, LogOut, Plus } from 'lucide-react';
+import { ArrowLeftRight, ChartNoAxesCombined, LogOut, Plus } from 'lucide-react';
+import { usePlatformAdmin } from '../../features/owner/usePlatformAdmin';
 import { initials } from '../../lib/format';
 import { ThemePicker } from '../ThemePicker';
 
@@ -34,6 +35,7 @@ export function UserMenu({ userName, businessName, roleLabel, onSignOut, canSwit
     };
   }, [open]);
 
+  const isOwner = usePlatformAdmin();
   const item = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-ink-700 hover:bg-sunken';
 
   return (
@@ -68,6 +70,12 @@ export function UserMenu({ userName, businessName, roleLabel, onSignOut, canSwit
           <div className="px-1.5 pb-1.5">
             <ThemePicker />
           </div>
+          {isOwner ? (
+            <Link role="menuitem" to="/owner" className={item} onClick={() => setOpen(false)}>
+              <ChartNoAxesCombined aria-hidden className="size-4" />
+              Owner statistics
+            </Link>
+          ) : null}
           {canSwitch ? (
             <Link role="menuitem" to="/choose-business" className={item} onClick={() => setOpen(false)}>
               <ArrowLeftRight aria-hidden className="size-4" />

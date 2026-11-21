@@ -48,6 +48,37 @@ export interface Invitation {
  * Everything the app needs from the sign-in service. The real implementation
  * talks to Supabase; tests use an in-memory one.
  */
+/** Operator-wide numbers for the JobFlow owner (RK Digitals). Counts only, never job contents. */
+export interface PlatformStats {
+  generatedAt: string;
+  signUps: number;
+  signUpsLast7Days: number;
+  activeLast7Days: number;
+  activeLast30Days: number;
+  businesses: number;
+  onTrial: number;
+  trialsEndingIn7Days: number;
+  paying: number;
+  payingByPlan: Record<string, number>;
+  monthlyRevenuePaise: number;
+  readOnly: number;
+  jobs: number;
+  jobsLast7Days: number;
+  productionEntriesLast7Days: number;
+  signUpsByWeek: { weekStart: string; count: number }[];
+  recentBusinesses: {
+    name: string;
+    createdAt: string;
+    plan: string;
+    status: string;
+    trialEndsAt: string;
+    canWrite: boolean;
+    members: number;
+    jobs: number;
+    lastActivityAt: string;
+  }[];
+}
+
 export interface AuthBackend {
   getUser(): Promise<AuthUser | null>;
   /** Calls back when the person signs in or out (also from another tab). Returns an unsubscribe function. */
@@ -68,6 +99,10 @@ export interface AuthBackend {
   updatePassword(password: string): Promise<void>;
   signOut(): Promise<void>;
   listWorkspaces(): Promise<Workspace[]>;
+  /** True only for accounts on the server's private owner list. */
+  isPlatformAdmin(): Promise<boolean>;
+  /** Refused by the server for anyone not on the owner list. */
+  platformStats(): Promise<PlatformStats>;
   createBusiness(name: string, ownerName: string): Promise<string>;
   acceptInvitation(token: string): Promise<string>;
   // Team management (owners and admins; the server checks permission)

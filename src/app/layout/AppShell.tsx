@@ -68,8 +68,16 @@ function Shell() {
       />
       <div className="flex min-w-0 flex-1 flex-col px-4 pt-4 pb-6 sm:px-6 lg:pt-5 lg:pr-6 lg:pl-1">
         <Header
-          title={isDashboard ? `Welcome back, ${firstName}` : (current?.label ?? 'Page not found')}
-          subtitle={isDashboard ? "Here's what is happening on your shop floor." : current?.summary}
+          title={
+            isDashboard ? `Welcome back, ${firstName}` : location.pathname === '/owner' ? 'Owner statistics' : (current?.label ?? 'Page not found')
+          }
+          subtitle={
+            isDashboard
+              ? "Here's what is happening on your shop floor."
+              : location.pathname === '/owner'
+                ? 'JobFlow across all businesses, for RK Digitals.'
+                : current?.summary
+          }
           onOpenMenu={() => setMobileOpen(true)}
           sync={local.syncState}
           onRetrySync={local.engine ? () => void local.engine?.syncNow() : undefined}

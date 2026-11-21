@@ -5,6 +5,8 @@ interface FakeOptions {
   user?: AuthUser | null;
   workspaces?: Workspace[];
   needsEmailConfirmation?: boolean;
+  /** Pretend this user is on the server's owner list. */
+  platformAdmin?: boolean;
 }
 
 /** In-memory AuthBackend for UI tests. Mirrors the real error messages for the cases tested. */
@@ -64,6 +66,22 @@ export function createFakeBackend(options: FakeOptions = {}) {
       if (url.includes('error=access_denied')) throw new UserFacingError('Sign-in was cancelled.', 'redirect_error');
       user = { id: 'user-4', email: 'google@alpha.test', fullName: 'Google User' };
       emit();
+    },
+    async isPlatformAdmin() {
+      return options.platformAdmin === true && user !== null;
+    },
+    async platformStats() {
+      if (!options.platformAdmin || !user) throw new UserFacingError('You do not have permission to do that.', 'forbidden');
+      return {
+        generatedAt: new Date().toISOString(),
+        signUps: 12, signUpsLast7Days: 5, activeLast7Days: 7, activeLast30Days: 10,
+        businesses: 6, onTrial: 4, trialsEndingIn7Days: 1, paying: 2, payingByPlan: { starter: 1, professional: 1 },
+        monthlyRevenuePaise: 89800, readOnly: 0, jobs: 40, jobsLast7Days: 9, productionEntriesLast7Days: 31,
+        signUpsByWeek: Array.from({ length: 8 }, (_, i) => ({ weekStart: `2026-10-${String(i + 1).padStart(2, '0')}`, count: i })),
+        recentBusinesses: [
+          { name: 'Godavari Packaging', createdAt: new Date().toISOString(), plan: 'starter', status: 'trialing', trialEndsAt: new Date(Date.now() + 3 * 86_400_000).toISOString(), canWrite: true, members: 3, jobs: 12, lastActivityAt: new Date().toISOString() },
+        ],
+      };
     },
     async requestPasswordReset(email) {
       calls.push(`reset:${email}`);

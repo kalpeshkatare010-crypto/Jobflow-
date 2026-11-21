@@ -18,7 +18,8 @@ create table auth.users (
   id uuid primary key,
   email text unique,
   raw_user_meta_data jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  last_sign_in_at timestamptz
 );
 
 -- Supabase reads the signed-in user from the JWT claims of the request.

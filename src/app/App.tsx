@@ -5,6 +5,7 @@ import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { NotFoundPage } from '../features/modules/ModulePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { AuthCallbackPage, CodeSignInPage } from '../auth/signInExtras';
+import { OwnerStatsPage } from '../features/owner/OwnerStatsPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
 import { InventoryPage } from '../features/inventory/InventoryPage';
 import { ProductionPage } from '../features/production/ProductionPage';
@@ -102,6 +103,7 @@ export function AppRoutes() {
         <Route path="production/*" element={<ProductionPage />} />
         <Route path="inventory/*" element={<InventoryPage />} />
         <Route path="reports/*" element={<ReportsPage />} />
+        <Route path="owner" element={<OwnerStatsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
