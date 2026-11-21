@@ -9,9 +9,10 @@ name: Android app
 # With them the APK is a signed release that installs over earlier versions.
 # Without them a test build is made (signed with a temporary key).
 #
-# The database address and publishable key are public and live in .env.android.
-# Optional repository variables (same page, "Variables" tab): VITE_GOOGLE_SIGN_IN,
-# VITE_SUPPORT_EMAIL, VITE_SUPPORT_WHATSAPP.
+# Public settings (database address, publishable key, support contacts, Google
+# sign-in switch) live in .env.android. Do not pass VITE_ variables from the
+# workflow: an unset GitHub variable arrives as an empty value and overrides
+# the file.
 
 on:
   push:
@@ -52,10 +53,6 @@ jobs:
         run: npm ci
 
       - name: Build the app and copy it into the Android project
-        env:
-          VITE_GOOGLE_SIGN_IN: ${{ vars.VITE_GOOGLE_SIGN_IN }}
-          VITE_SUPPORT_EMAIL: ${{ vars.VITE_SUPPORT_EMAIL }}
-          VITE_SUPPORT_WHATSAPP: ${{ vars.VITE_SUPPORT_WHATSAPP }}
         run: npm run build:android
 
       - name: Prepare signing key
