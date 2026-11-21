@@ -9,8 +9,9 @@ name: Android app
 # With them the APK is a signed release that installs over earlier versions.
 # Without them a test build is made (signed with a temporary key).
 #
-# Optional repository variables (same page, "Variables" tab), to connect the
-# app to your database: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY.
+# The database address and publishable key are public and live in .env.android.
+# Optional repository variables (same page, "Variables" tab): VITE_GOOGLE_SIGN_IN,
+# VITE_SUPPORT_EMAIL, VITE_SUPPORT_WHATSAPP.
 
 on:
   push:
@@ -52,8 +53,6 @@ jobs:
 
       - name: Build the app and copy it into the Android project
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           VITE_GOOGLE_SIGN_IN: ${{ vars.VITE_GOOGLE_SIGN_IN }}
           VITE_SUPPORT_EMAIL: ${{ vars.VITE_SUPPORT_EMAIL }}
           VITE_SUPPORT_WHATSAPP: ${{ vars.VITE_SUPPORT_WHATSAPP }}

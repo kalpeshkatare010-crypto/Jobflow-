@@ -47,6 +47,8 @@ Short record of choices made where the specification left room. Change a decisio
 
 - **D-29 Plans and billing without live payments.** Settings shows the current plan, trial days left, usage against the plan's limits, and both plans at ₹299 and ₹599 per month (a test keeps the screen equal to the database). A banner warns everyone 3 days before the trial ends, during the 7-day grace week, and when read-only. Online payment is **not** switched on: choosing a payment provider (for example Razorpay or Cashfree) has fees and needs the owner's approval, so the screen says to contact support, and the owner activates plans by hand in Supabase meanwhile (docs/LAUNCH.md).
 
+- **D-30 Connection settings in the repository.** The Supabase Project URL and publishable key are public by design (Row Level Security protects the data), so they are committed in `.env.production` and `.env.android` instead of being typed into Cloudflare and GitHub. Tests and the preview build still run in demo mode. Secrets (database password, access token, secret keys, signing key) never go in the repository.
+
 ## Architecture corrections (made before the code that depends on them)
 
 - **C-01 Commit-safe sync cursor.** A sequence number assigned at write time is not commit-ordered: a slow transaction can commit a lower number after a device has already pulled past it, and that row would never be downloaded. Each synced row records the writing transaction id (`xid8`). A pull returns rows whose transaction id is at or above the device's checkpoint, and the new checkpoint is `pg_snapshot_xmin(pg_current_snapshot())`, the oldest transaction still running. Rows may be sent twice, never missed; the client merge is idempotent by `id` + `version`.

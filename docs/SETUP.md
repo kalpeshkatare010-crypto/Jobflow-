@@ -43,10 +43,7 @@ You will copy a few values between websites. Keep a private note open to paste t
    - Build command: `npm run build`
    - Deploy command: `npx wrangler deploy`
 3. **Deploy**. Cloudflare gives you an address like `https://jobflow.<your-name>.workers.dev`.
-4. To connect the database, open the project → **Settings → Build → Variables and secrets** (build variables, not runtime ones) and add:
-   - `VITE_SUPABASE_URL` = your Project URL
-   - `VITE_SUPABASE_ANON_KEY` = your anon public key
-   Then **Deployments → Retry/Redeploy** so the site is rebuilt with them.
+4. The database connection is already built in: the public Project URL and publishable key are in `.env.production` (website) and `.env.android` (app). Only if you ever move to a different Supabase project, change those two files (or ask me to).
 
 ## 5. Tell Supabase where the website lives
 

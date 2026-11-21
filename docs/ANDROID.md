@@ -27,13 +27,7 @@ If you installed a TEST build, uninstall it once before installing the first sig
 
 ## Connecting the app to the database
 
-The app needs the same two public settings as the website, as GitHub **variables** (not secrets):
-Settings → Secrets and variables → Actions → **Variables** tab → New repository variable:
-
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-
-Then run the **Android app** workflow again. Without them the app runs in demo mode (data stays on the phone).
+The app is connected through the public values in `.env.android` (Project URL and publishable key). Every build GitHub makes uses them; nothing to set.
 
 ## Good to know
 
