@@ -6,6 +6,7 @@ import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { ModulePage, NotFoundPage } from '../features/modules/ModulePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { AuthCallbackPage, CodeSignInPage } from '../auth/signInExtras';
+import { InventoryPage } from '../features/inventory/InventoryPage';
 import { ProductionPage } from '../features/production/ProductionPage';
 import { HelpPage } from '../features/help/HelpPage';
 import { CustomersPage } from '../features/customers/CustomersPage';
@@ -99,7 +100,8 @@ export function AppRoutes() {
         <Route path="workflows/*" element={<WorkflowsPage />} />
         <Route path="help/*" element={<HelpPage />} />
         <Route path="production/*" element={<ProductionPage />} />
-        {NAV_ITEMS.filter((item) => !['/', '/settings', '/customers', '/jobs', '/employees', '/workflows', '/help', '/production'].includes(item.path)).map((item) => (
+        <Route path="inventory/*" element={<InventoryPage />} />
+        {NAV_ITEMS.filter((item) => !['/', '/settings', '/customers', '/jobs', '/employees', '/workflows', '/help', '/production', '/inventory'].includes(item.path)).map((item) => (
           <Route key={item.path} path={`${item.path.slice(1)}/*`} element={<ModulePage />} />
         ))}
         <Route path="*" element={<NotFoundPage />} />

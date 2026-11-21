@@ -28,6 +28,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useLocalData } from '../../offline/LocalDataProvider';
 import { toSummary, UNNUMBERED, useJobViews } from '../jobs/jobData';
 import { weeklyOutput } from '../../domain/production';
+import { useMaterialViews } from '../inventory/InventoryPage';
 import { JOB_STATUS_LABEL as STATUS_TEXT } from '../../components/ui';
 import { useAuth } from '../../auth/AuthProvider';
 import { describeDue, formatNumber, formatPercent, formatRelativeTime, formatShortDate, daysUntil } from '../../lib/format';
@@ -194,6 +195,8 @@ export function DashboardPage() {
   const views = useJobViews(db);
   const customerCount = useLiveQuery(async () => (await db.customers.toArray()).filter((c) => !c.deleted_at).length, [db]);
   const activity = useRecentActivity();
+  const materials = useMaterialViews();
+  const lowStock = (materials ?? []).filter((m) => m.level !== 'ok' && m.material.is_active);
   const realJobs = useMemo(() => (views && views.length > 0 ? views.map(toSummary) : null), [views]);
   const demo = realJobs === null;
   const demoJobs = useMemo(() => buildDemoJobs(today), [today]);
@@ -380,7 +383,31 @@ export function DashboardPage() {
                   ))}
                 </ul>
               </Card>
-              <ComingSoon title="Low stock" text="Stock levels and low-stock alerts arrive with the inventory update." />
+              <Card>
+                <CardHeader title="Low stock" description="Below the minimum you set" />
+                {materials && materials.length === 0 ? (
+                  <Quiet text="Add your materials in Inventory with a minimum, and low stock shows up here." />
+                ) : lowStock.length === 0 ? (
+                  <Quiet text="Every material is at or above its minimum." />
+                ) : (
+                  <ul className="flex flex-col gap-3">
+                    {lowStock.slice(0, 6).map((item) => (
+                      <li key={item.material.id} className="flex items-center gap-3 text-[13px]">
+                        <PackageX aria-hidden className="size-4 shrink-0 text-critical" />
+                        <Link to="/inventory" className="min-w-0 flex-1 truncate text-ink-900 hover:underline">
+                          {item.material.name}
+                        </Link>
+                        <span className="tabular shrink-0 text-ink-500">
+                          <span className="font-medium text-critical">
+                            {formatNumber(item.onHand)} {item.material.unit}
+                          </span>{' '}
+                          of {formatNumber(Number(item.material.min_stock))}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Card>
             </>
           )}
         </div>

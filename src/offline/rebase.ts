@@ -14,6 +14,8 @@ export const SERVER_TABLES = [
   'job_stages',
   'job_events',
   'production_entries',
+  'materials',
+  'stock_movements',
 ] as const;
 export type ServerTable = (typeof SERVER_TABLES)[number];
 
@@ -27,6 +29,8 @@ export function localTable(db: JobFlowDB, table: ServerTable): Table<Record<stri
     job_stages: db.jobStages,
     job_events: db.jobEvents,
     production_entries: db.productionEntries,
+    materials: db.materials,
+    stock_movements: db.stockMovements,
   } as const;
   return map[table] as unknown as Table<Record<string, unknown>, string>;
 }
@@ -37,6 +41,8 @@ export function tableForMutation(type: MutationType): ServerTable {
   if (type.startsWith('employee.')) return 'employees';
   if (type.startsWith('workflow.')) return 'workflows';
   if (type.startsWith('production.')) return 'production_entries';
+  if (type.startsWith('material.')) return 'materials';
+  if (type.startsWith('stock.')) return 'stock_movements';
   return 'job_orders';
 }
 

@@ -49,7 +49,11 @@ export type MutationType =
   | 'job.transition'
   | 'job.stage'
   | 'production.record'
-  | 'production.void';
+  | 'production.void'
+  | 'material.create'
+  | 'material.update'
+  | 'material.delete'
+  | 'stock.move';
 
 /** Common shape of every synced row kept on the device. */
 export interface SyncedRow {
@@ -152,6 +156,35 @@ export interface ProductionEntryRecord extends SyncedRow {
   _message?: string;
 }
 
+export interface MaterialRecord extends SyncedRow {
+  name: string;
+  code: string | null;
+  unit: string;
+  category: string | null;
+  min_stock: number;
+  /** As last confirmed by the server. Movements waiting on this device are added on top when shown. */
+  on_hand: number;
+  notes: string | null;
+  is_active: boolean;
+}
+
+export type MovementKind = 'receive' | 'issue' | 'adjust';
+
+/** One change to a material's stock. Signed: positive adds, negative removes. Never edited. */
+export interface StockMovementRecord extends SyncedRow {
+  material_id: string;
+  kind: MovementKind;
+  qty: number;
+  /** Set by the server; null until confirmed. */
+  balance_after: number | null;
+  job_id: string | null;
+  /** YYYY-MM-DD */
+  movement_date: string;
+  reason: string | null;
+  recorded_by_name: string | null;
+  _message?: string;
+}
+
 export interface OutboxEntry {
   seq?: number;
   mutationId: string;
@@ -179,6 +212,10 @@ export interface OutboxEntry {
     good?: number;
     rejected?: number;
     notes?: string | null;
+    /** stock.move */
+    materialId?: string;
+    kind?: MovementKind;
+    qty?: number;
   };
   createdAt: string;
   attempts: number;
@@ -206,7 +243,7 @@ export interface ConflictRecord {
 
 /** Every local table a sync transaction may touch. */
 export function allTables(db: JobFlowDB) {
-  return [db.customers, db.employees, db.workflows, db.workflowStages, db.jobOrders, db.jobStages, db.jobEvents, db.productionEntries, db.outbox, db.conflicts, db.meta];
+  return [db.customers, db.employees, db.workflows, db.workflowStages, db.jobOrders, db.jobStages, db.jobEvents, db.productionEntries, db.materials, db.stockMovements, db.outbox, db.conflicts, db.meta];
 }
 
 export interface MetaRecord {
@@ -226,6 +263,8 @@ export class JobFlowDB extends Dexie {
   jobStages!: Table<JobStageRecord, string>;
   jobEvents!: Table<JobEventRecord, string>;
   productionEntries!: Table<ProductionEntryRecord, string>;
+  materials!: Table<MaterialRecord, string>;
+  stockMovements!: Table<StockMovementRecord, string>;
 
   constructor(name: string) {
     super(name);
@@ -246,6 +285,10 @@ export class JobFlowDB extends Dexie {
     });
     this.version(3).stores({
       productionEntries: 'id, job_id, job_stage_id, entry_date, _sync',
+    });
+    this.version(4).stores({
+      materials: 'id, name, _sync',
+      stockMovements: 'id, material_id, job_id, movement_date, _sync',
     });
   }
 }
