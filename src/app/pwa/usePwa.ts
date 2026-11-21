@@ -54,12 +54,47 @@ export function useInstallPrompt() {
   return { canInstall: event !== null && !installed, installed, install };
 }
 
-/** New-version notice. The app reloads only when the person chooses to. */
+const STARTED_AT = Date.now();
+/** Within this long after opening, nobody has started typing yet, so updating right away is safe. */
+const FRESH_START_MS = 15_000;
+
+/**
+ * Keeps the website on the newest version without interrupting work:
+ * - checks for a new version on open, whenever the app comes back to the screen, and every 30 minutes;
+ * - applies it at once if the app was just opened, otherwise the moment the person leaves the app
+ *   (their saved work is in the device database, so nothing is lost);
+ * - meanwhile shows the "new version" notice for anyone who wants it now.
+ */
 export function useAppUpdate() {
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
-  } = useRegisterSW({ immediate: true });
+  } = useRegisterSW({
+    immediate: true,
+    onRegisteredSW(_url, registration) {
+      if (!registration) return;
+      const check = () => {
+        if (navigator.onLine !== false) void registration.update().catch(() => undefined);
+      };
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') check();
+      });
+      window.setInterval(check, 30 * 60_000);
+    },
+  });
+
+  useEffect(() => {
+    if (!needRefresh) return;
+    if (Date.now() - STARTED_AT < FRESH_START_MS || document.visibilityState === 'hidden') {
+      void updateServiceWorker(true);
+      return;
+    }
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') void updateServiceWorker(true);
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, [needRefresh, updateServiceWorker]);
 
   return {
     updateReady: needRefresh,

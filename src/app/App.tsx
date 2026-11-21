@@ -32,6 +32,7 @@ import {
 import { ErrorState, Spinner } from '../components/ui';
 import { UpdateNotice } from './pwa/PwaControls';
 import { ThemeProvider } from './theme';
+import { SplashController } from './SplashController';
 
 /**
  * The preview build (`npm run build:preview`) uses hash URLs (#/jobs) so it
@@ -125,6 +126,7 @@ export function App({
   return (
     <ThemeProvider>
       <AuthProvider backend={backend}>
+        <SplashController />
         <SyncApiContext.Provider value={syncApi}>
           <Router>
             <AppRoutes />

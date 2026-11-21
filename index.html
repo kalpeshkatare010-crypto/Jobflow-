@@ -11,8 +11,44 @@
     <meta name="apple-mobile-web-app-title" content="JobFlow" />
     <title>JobFlow</title>
     <script src="%BASE_URL%theme-init.js"></script>
+    <style>
+      /* Launch animation: the JobFlow bars rise in turn, then wave until the app is ready.
+         Inline so it shows before any script or stylesheet loads. */
+      #boot-splash { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 16px; background: #eef0f3; transition: opacity 280ms ease; }
+      :root[data-theme='dark'] #boot-splash { background: #0f1524; }
+      #boot-splash.bs-leave { opacity: 0; pointer-events: none; }
+      #boot-splash.bs-hidden { display: none; }
+      #boot-splash svg { width: 76px; height: 76px; filter: drop-shadow(0 10px 24px rgba(20, 33, 61, 0.22));
+        animation: bs-pop 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+      #boot-splash .bs-bar { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(0);
+        animation: bs-rise 520ms cubic-bezier(0.2, 0.9, 0.3, 1.25) forwards, bs-wave 1.1s ease-in-out 1.2s infinite; }
+      #boot-splash .b1 { animation-delay: 120ms, 1.2s; }
+      #boot-splash .b2 { animation-delay: 240ms, 1.35s; }
+      #boot-splash .b3 { animation-delay: 360ms, 1.5s; }
+      #boot-splash .bs-word { font: 600 21px/1 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        letter-spacing: -0.02em; color: #14213d; opacity: 0; transform: translateY(6px); animation: bs-fade 420ms ease 620ms forwards; }
+      :root[data-theme='dark'] #boot-splash .bs-word { color: #f1f4f9; }
+      :root[data-theme='dark'] #boot-splash .bs-bg { fill: #24345a; }
+      @keyframes bs-pop { from { transform: scale(0.86); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      @keyframes bs-rise { to { transform: scaleY(1); } }
+      @keyframes bs-wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.72); } }
+      @keyframes bs-fade { to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) {
+        #boot-splash svg, #boot-splash .bs-bar, #boot-splash .bs-word { animation: none; transform: none; opacity: 1; }
+      }
+    </style>
   </head>
   <body>
+    <div id="boot-splash" aria-hidden="true">
+      <svg viewBox="0 0 32 32">
+        <rect class="bs-bg" width="32" height="32" rx="9" fill="#14213D" />
+        <rect class="bs-bar b1" x="7" y="18" width="5" height="7" rx="1.5" fill="#FFFFFF" />
+        <rect class="bs-bar b2" x="13.5" y="13" width="5" height="12" rx="1.5" fill="#FFFFFF" />
+        <rect class="bs-bar b3" x="20" y="7" width="5" height="18" rx="1.5" fill="#F2D24B" />
+      </svg>
+      <div class="bs-word">JobFlow</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

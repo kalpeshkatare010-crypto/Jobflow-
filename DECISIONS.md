@@ -51,6 +51,8 @@ Short record of choices made where the specification left room. Change a decisio
 
 - **D-31 Sample data only in the unconnected demo.** A signed-in business always sees its own figures, even when they are zero, plus a "Get started" list (workflow, customer, first job). Sample jobs appear only when the app is not connected to a database. Support contacts (email and WhatsApp, given by the owner) are set in `.env.production` and `.env.android`.
 
+- **D-32 Launch animation and automatic updates.** The JobFlow mark's three bars rise in turn and gently wave while the app starts (inline in index.html, so it shows before any script), then fade out; returning after 30 seconds or more replays it briefly. Reduced-motion settings show it still. The website now updates itself: it checks for a new version on open, on return and every 30 minutes, and switches at once if just opened, otherwise as soon as the person leaves the app, so typing is never interrupted.
+
 ## Architecture corrections (made before the code that depends on them)
 
 - **C-01 Commit-safe sync cursor.** A sequence number assigned at write time is not commit-ordered: a slow transaction can commit a lower number after a device has already pulled past it, and that row would never be downloaded. Each synced row records the writing transaction id (`xid8`). A pull returns rows whose transaction id is at or above the device's checkpoint, and the new checkpoint is `pg_snapshot_xmin(pg_current_snapshot())`, the oldest transaction still running. Rows may be sent twice, never missed; the client merge is idempotent by `id` + `version`.
