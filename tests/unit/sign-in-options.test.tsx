@@ -46,7 +46,7 @@ describe('Google sign-in', () => {
   });
 
   it('finishes on the callback page and goes where the person was heading', async () => {
-    const { backend, calls } = createFakeBackend({ workspaces: [workspace()] });
+    const { backend, calls } = createFakeBackend({ workspaces: [workspace('Alpha Fabricators', 't1')] });
     window.sessionStorage.setItem('jobflow:auth-next', '/customers');
     renderApp(backend, '/auth/callback?code=abc');
     expect(await screen.findByRole('heading', { name: 'Customers' })).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe('Google sign-in', () => {
 
 describe('Email code sign-in', () => {
   it('sends a code, rejects a wrong one and signs in with the right one', async () => {
-    const { backend, calls } = createFakeBackend({ workspaces: [workspace()] });
+    const { backend, calls } = createFakeBackend({ workspaces: [workspace('Alpha Fabricators', 't1')] });
     renderApp(backend, '/sign-in');
     await userEvent.click(await screen.findByRole('link', { name: 'Email me a sign-in code instead' }));
     await userEvent.type(await screen.findByLabelText(/Email/), 'new@alpha.test');
