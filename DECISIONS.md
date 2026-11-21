@@ -49,6 +49,8 @@ Short record of choices made where the specification left room. Change a decisio
 
 - **D-30 Connection settings in the repository.** The Supabase Project URL and publishable key are public by design (Row Level Security protects the data), so they are committed in `.env.production` and `.env.android` instead of being typed into Cloudflare and GitHub. Tests and the preview build still run in demo mode. Secrets (database password, access token, secret keys, signing key) never go in the repository.
 
+- **D-31 Sample data only in the unconnected demo.** A signed-in business always sees its own figures, even when they are zero, plus a "Get started" list (workflow, customer, first job). Sample jobs appear only when the app is not connected to a database. Support contacts (email and WhatsApp, given by the owner) are set in `.env.production` and `.env.android`.
+
 ## Architecture corrections (made before the code that depends on them)
 
 - **C-01 Commit-safe sync cursor.** A sequence number assigned at write time is not commit-ordered: a slow transaction can commit a lower number after a device has already pulled past it, and that row would never be downloaded. Each synced row records the writing transaction id (`xid8`). A pull returns rows whose transaction id is at or above the device's checkpoint, and the new checkpoint is `pg_snapshot_xmin(pg_current_snapshot())`, the oldest transaction still running. Rows may be sent twice, never missed; the client merge is idempotent by `id` + `version`.

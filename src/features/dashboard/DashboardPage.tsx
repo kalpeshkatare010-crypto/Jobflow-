@@ -60,6 +60,51 @@ const STATUS_BAR: Record<string, string> = {
   cancelled: 'bg-critical',
 };
 
+/** First steps for a new business, ticked off as they are done. */
+function GetStarted({ workflows, customers }: { workflows: number; customers: number }) {
+  const steps = [
+    { done: workflows > 0, to: '/workflows', title: 'Create a workflow', text: 'Your own stage names, for example Cutting, Printing, Packing.' },
+    { done: customers > 0, to: '/customers', title: 'Add a customer', text: 'Who you make jobs for.' },
+    { done: false, to: '/jobs?new=1', title: 'Create your first job order', text: 'Pick the customer and workflow; then track each stage.' },
+  ];
+  const next = steps.find((step) => !step.done);
+  return (
+    <Card className="mb-5">
+      <CardHeader title="Get started" description="Three steps and JobFlow is tracking your shop floor." />
+      <ol className="flex flex-col gap-2">
+        {steps.map((step, index) => (
+          <li key={step.title}>
+            <Link
+              to={step.to}
+              className={cn(
+                'press flex items-start gap-3 rounded-[var(--radius-control)] p-3 hover:bg-sunken',
+                step === next && 'bg-sunken',
+              )}
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  'grid size-6 shrink-0 place-items-center rounded-full text-[12px] font-semibold',
+                  step.done ? 'bg-good text-white' : 'border border-line-strong text-ink-700',
+                )}
+              >
+                {step.done ? '✓' : index + 1}
+              </span>
+              <span className="min-w-0">
+                <span className={cn('block text-[14px] font-medium', step.done ? 'text-ink-500 line-through' : 'text-ink-900')}>
+                  {step.title}
+                  <span className="sr-only">{step.done ? ' (done)' : ''}</span>
+                </span>
+                <span className="block text-[13px] text-ink-500">{step.text}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
+
 function DemoNotice() {
   const { status } = useAuth();
   return (
@@ -71,8 +116,8 @@ function DemoNotice() {
       <p>
         <span className="font-medium text-ink-900">You are looking at demonstration data.</span>{' '}
         {status === 'signed_in'
-          ? 'Your business is set up. These sample jobs and figures stay here, marked "Demo data", until you create your first job order.'
-          : 'These jobs, customers and figures are invented samples. Your own records will replace them once your business is set up.'}
+          ? 'These sample jobs and figures are marked "Demo data".'
+          : 'This copy of JobFlow is not connected, so these jobs, customers and figures are invented samples.'}
       </p>
     </div>
   );
@@ -197,10 +242,13 @@ export function DashboardPage() {
   const activity = useRecentActivity();
   const materials = useMaterialViews();
   const lowStock = (materials ?? []).filter((m) => m.level !== 'ok' && m.material.is_active);
+  const { status } = useAuth();
   const realJobs = useMemo(() => (views && views.length > 0 ? views.map(toSummary) : null), [views]);
-  const demo = realJobs === null;
+  // Sample data only in the unconnected demo; a real business always sees its own figures, even when empty.
+  const demo = status === 'demo' && realJobs === null;
   const demoJobs = useMemo(() => buildDemoJobs(today), [today]);
-  const jobs = realJobs ?? demoJobs;
+  const jobs = realJobs ?? (demo ? demoJobs : []);
+  const workflowCount = useLiveQuery(async () => (await db.workflows.toArray()).filter((w) => !w.deleted_at && !w.archived_at).length, [db]);
   const realWeekly = useMemo(() => {
     if (!views || views.length === 0) return null;
     const outputStages = new Set(views.flatMap((v) => v.stages.filter((st) => st.counts_output).map((st) => st.id)));
@@ -261,7 +309,11 @@ export function DashboardPage() {
 
   return (
     <div>
-      {views === undefined ? null : demo ? <DemoNotice /> : null}
+      {views === undefined ? null : demo ? (
+        <DemoNotice />
+      ) : realJobs === null ? (
+        <GetStarted workflows={workflowCount ?? 0} customers={customerCount ?? 0} />
+      ) : null}
 
       <section aria-label="Key figures" className="stagger mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <MetricCard wash="lilac" label="Job orders" value={formatNumber(metrics.total)} icon={<ClipboardList className="size-4" />} note="Excluding cancelled" />
@@ -329,7 +381,13 @@ export function DashboardPage() {
               </Link>
             }
           />
-          <DataTable caption={demo ? 'Recent job orders (demonstration data)' : 'Recent job orders'} columns={columns} rows={recent} rowKey={(job) => job.id} />
+          <DataTable
+            caption={demo ? 'Recent job orders (demonstration data)' : 'Recent job orders'}
+            columns={columns}
+            rows={recent}
+            rowKey={(job) => job.id}
+            empty={{ title: 'No job orders yet', description: 'Your newest jobs appear here.' }}
+          />
         </Card>
 
         <div className="flex min-w-0 flex-col gap-5 xl:col-span-4">
@@ -372,6 +430,7 @@ export function DashboardPage() {
             <>
               <Card>
                 <CardHeader title="Recent activity" />
+                {activity && activity.length === 0 ? <Quiet text="What your team does on jobs shows up here." /> : null}
                 <ul className="flex flex-col gap-3">
                   {(activity ?? []).map((item) => (
                     <li key={item.id} className="text-[13px] leading-snug">

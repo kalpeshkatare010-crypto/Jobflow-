@@ -62,11 +62,12 @@ export function buildWidgetSnapshot(input: {
   now?: Date;
 }): WidgetSnapshot {
   const now = input.now ?? new Date();
-  const real = input.jobs && input.jobs.length > 0 ? input.jobs : null;
-  const metrics = computeJobMetrics(real ?? buildDemoJobs(now), now);
+  // Samples only for the unconnected demo before any job exists; a real business always sees its own numbers.
+  const useSamples = input.demo && !(input.jobs && input.jobs.length > 0);
+  const metrics = computeJobMetrics(useSamples ? buildDemoJobs(now) : (input.jobs ?? []), now);
   return {
     business: input.business,
-    demo: input.demo || real === null,
+    demo: useSamples,
     inProduction: metrics.inProduction,
     delayed: metrics.delayed,
     customers: input.customers,
