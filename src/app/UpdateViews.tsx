@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Download } from 'lucide-react';
-import { Button, Card, CardHeader } from '../components/ui';
-import { installedBuild, useAppUpdates, type UpdateState } from './updates';
+import { Button } from '../components/ui';
+import { useAppUpdates, type UpdateState } from './updates';
 
 function sizeLabel(bytes: number) {
   return `${(bytes / 1_048_576).toFixed(1)} MB`;
@@ -49,41 +49,5 @@ export function UpdateBanner() {
         </span>
       ) : null}
     </div>
-  );
-}
-
-/** Settings: the installed version and a "Check for updates" button. */
-export function AppUpdateSection() {
-  const { native, state, check, install } = useAppUpdates();
-  const [build, setBuild] = useState<number | null>(null);
-  useEffect(() => {
-    if (native) void installedBuild().then(setBuild).catch(() => setBuild(null));
-  }, [native]);
-  if (!native) return null;
-  return (
-    <Card>
-      <CardHeader title="App version" description={`JobFlow ${__APP_VERSION__}${build ? `, build ${build}` : ''}`} />
-      <div className="flex flex-wrap items-center gap-3 text-[13px]">
-        {state.kind === 'available' ? (
-          <>
-            <span className="flex-1">Build {state.update.build} is ready ({sizeLabel(state.update.sizeBytes)}).</span>
-            <Button size="sm" onClick={() => void install(state.update)}>
-              Update now
-            </Button>
-          </>
-        ) : state.kind === 'downloading' || state.kind === 'installing' ? (
-          <Progress state={state} />
-        ) : (
-          <>
-            <span className="flex-1 text-ink-700">
-              {state.kind === 'current' ? 'You have the latest version.' : state.kind === 'error' ? state.message : 'Updates are checked automatically.'}
-            </span>
-            <Button size="sm" variant="secondary" loading={state.kind === 'checking'} onClick={() => void check(true)}>
-              Check for updates
-            </Button>
-          </>
-        )}
-      </div>
-    </Card>
   );
 }

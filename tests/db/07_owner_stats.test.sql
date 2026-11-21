@@ -20,7 +20,7 @@ reset role;
 
 -- The project owner adds themselves in the Supabase SQL Editor (runs as postgres).
 insert into private.platform_admins (user_id) values (:'operator');
-update public.tenants set subscription_status = 'active', plan_code = 'professional' where id = :'tenant';
+update public.tenants set subscription_status = 'active', plan_code = 'standard' where id = :'tenant';
 
 select test.as_user(:'operator');
 select test.ok(public.am_platform_admin(), 'the owner is recognised');

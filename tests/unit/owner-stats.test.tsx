@@ -27,7 +27,7 @@ describe('Owner statistics', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Account menu|KK|Kalpesh/i }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Owner statistics' }));
     expect(await screen.findByText('Godavari Packaging')).toBeInTheDocument();
-    expect(screen.getByText('₹898')).toBeInTheDocument();
+    expect(screen.getByText('₹1,998')).toBeInTheDocument();
     expect(screen.getByText(/never see customers/)).toBeInTheDocument();
   });
 

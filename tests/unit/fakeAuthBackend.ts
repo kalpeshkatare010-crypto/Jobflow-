@@ -1,4 +1,4 @@
-import { UserFacingError, type AuthBackend, type AuthUser, type Invitation, type Member, type Workspace } from '../../src/auth/types';
+import { UserFacingError, type AuthBackend, type TenantAccess, type AuthUser, type Invitation, type Member, type Workspace } from '../../src/auth/types';
 
 interface FakeOptions {
   /** Signed-in user at start. */
@@ -7,6 +7,8 @@ interface FakeOptions {
   needsEmailConfirmation?: boolean;
   /** Pretend this user is on the server's owner list. */
   platformAdmin?: boolean;
+  /** Override what the server would say about access. */
+  access?: Partial<TenantAccess>;
 }
 
 /** In-memory AuthBackend for UI tests. Mirrors the real error messages for the cases tested. */
@@ -70,16 +72,34 @@ export function createFakeBackend(options: FakeOptions = {}) {
     async isPlatformAdmin() {
       return options.platformAdmin === true && user !== null;
     },
+    async tenantAccess(tenantId) {
+      calls.push(`access:${tenantId}`);
+      const ws = workspaces.find((w) => w.tenantId === tenantId);
+      if (!ws || !user) throw new UserFacingError('You do not have permission to do that.', 'forbidden');
+      const admin = options.platformAdmin === true;
+      const complimentary = admin && (ws.role === 'owner' || ws.role === 'admin');
+      return {
+        canUse: complimentary || (ws.subscriptionStatus === 'active') || (ws.subscriptionStatus === 'trialing' && ws.trialEndsAt.getTime() > Date.now()),
+        complimentary,
+        isAdmin: admin,
+        status: ws.subscriptionStatus,
+        trialEndsAt: ws.trialEndsAt,
+        periodEnd: null,
+        pricePaise: 99900,
+        checkedAt: new Date(),
+        ...options.access,
+      };
+    },
     async platformStats() {
       if (!options.platformAdmin || !user) throw new UserFacingError('You do not have permission to do that.', 'forbidden');
       return {
         generatedAt: new Date().toISOString(),
         signUps: 12, signUpsLast7Days: 5, activeLast7Days: 7, activeLast30Days: 10,
-        businesses: 6, onTrial: 4, trialsEndingIn7Days: 1, paying: 2, payingByPlan: { starter: 1, professional: 1 },
-        monthlyRevenuePaise: 89800, readOnly: 0, jobs: 40, jobsLast7Days: 9, productionEntriesLast7Days: 31,
+        businesses: 6, onTrial: 4, trialsEndingIn7Days: 1, paying: 2, payingByPlan: { standard: 2 },
+        monthlyRevenuePaise: 199800, readOnly: 0, jobs: 40, jobsLast7Days: 9, productionEntriesLast7Days: 31,
         signUpsByWeek: Array.from({ length: 8 }, (_, i) => ({ weekStart: `2026-10-${String(i + 1).padStart(2, '0')}`, count: i })),
         recentBusinesses: [
-          { name: 'Godavari Packaging', createdAt: new Date().toISOString(), plan: 'starter', status: 'trialing', trialEndsAt: new Date(Date.now() + 3 * 86_400_000).toISOString(), canWrite: true, members: 3, jobs: 12, lastActivityAt: new Date().toISOString() },
+          { name: 'Godavari Packaging', createdAt: new Date().toISOString(), plan: 'standard', status: 'trialing', trialEndsAt: new Date(Date.now() + 3 * 86_400_000).toISOString(), canWrite: true, members: 3, jobs: 12, lastActivityAt: new Date().toISOString() },
         ],
       };
     },
@@ -106,7 +126,7 @@ export function createFakeBackend(options: FakeOptions = {}) {
           tenantId,
           name,
           role: 'owner',
-          planCode: 'starter',
+          planCode: 'standard',
           subscriptionStatus: 'trialing',
           trialEndsAt: new Date(Date.now() + 14 * 86_400_000),
           isDemo: false,
@@ -125,7 +145,7 @@ export function createFakeBackend(options: FakeOptions = {}) {
           tenantId: 'tenant-invited',
           name: 'Invited Works',
           role: 'employee',
-          planCode: 'starter',
+          planCode: 'standard',
           subscriptionStatus: 'active',
           trialEndsAt: new Date(),
           isDemo: false,
@@ -169,7 +189,7 @@ export function workspace(name: string, tenantId: string): Workspace {
     tenantId,
     name,
     role: 'owner',
-    planCode: 'starter',
+    planCode: 'standard',
     subscriptionStatus: 'trialing',
     trialEndsAt: new Date(Date.now() + 10 * 86_400_000),
     isDemo: false,

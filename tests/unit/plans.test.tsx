@@ -4,62 +4,95 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { AppRoutes } from '../../src/app/App';
 import { AuthProvider } from '../../src/auth/AuthProvider';
-import { formatRupees, PLANS, subscriptionNotice } from '../../src/domain/plans';
+import { canUseNow, formatRupees, PLAN, PLANS, subscriptionNotice } from '../../src/domain/plans';
 import { createFakeBackend, workspace } from './fakeAuthBackend';
 
 const DAY = 86_400_000;
 
 describe('plans', () => {
-  it('match the database exactly: Starter ₹299 and Professional ₹599 with the same limits', () => {
-    const sql = readFileSync('supabase/migrations/20261120000100_tenancy.sql', 'utf8');
-    for (const plan of PLANS) {
-      const row = new RegExp(`\\('${plan.code}', '${plan.name}', (\\d+), '([^']+)'`).exec(sql);
-      expect(row, plan.code).not.toBeNull();
-      expect(Number(row![1])).toBe(plan.pricePaise);
-      const limits = JSON.parse(row![2]!) as Record<string, number | null>;
-      expect(limits).toEqual({ logins: plan.limits.logins, employees: plan.limits.employees, workflows: plan.limits.workflows, open_jobs: plan.limits.openJobs });
-    }
-    expect(PLANS.map((p) => formatRupees(p.pricePaise))).toEqual(['₹299', '₹599']);
+  it('has one plan, ₹999 a month with no limits, matching the database', () => {
+    const sql = readFileSync('supabase/migrations/20261121000800_single_plan_and_admin.sql', 'utf8');
+    const row = /\('standard', '([^']+)', (\d+), '([^']+)'/.exec(sql);
+    expect(row).not.toBeNull();
+    expect(row![1]).toBe(PLAN.name);
+    expect(Number(row![2])).toBe(PLAN.pricePaise);
+    expect(Object.values(JSON.parse(row![3]!) as Record<string, unknown>).every((v) => v === null)).toBe(true);
+    expect(PLANS).toHaveLength(1);
+    expect(formatRupees(PLAN.pricePaise)).toBe('₹999');
   });
 
-  it('describe the trial, the grace week and read-only like the server does', () => {
+  it('ends access when the trial ends, and gives paid months 3 extra days, like the server', () => {
     const now = new Date('2026-11-21T10:00:00Z');
     const at = (days: number) => new Date(now.getTime() + days * DAY);
     expect(subscriptionNotice({ subscriptionStatus: 'trialing', trialEndsAt: at(10) }, now)).toMatchObject({ kind: 'trial', daysLeft: 10 });
     expect(subscriptionNotice({ subscriptionStatus: 'trialing', trialEndsAt: at(2) }, now)).toMatchObject({ kind: 'trial_ending', daysLeft: 2 });
-    expect(subscriptionNotice({ subscriptionStatus: 'trialing', trialEndsAt: at(-3) }, now).kind).toBe('grace');
-    expect(subscriptionNotice({ subscriptionStatus: 'trialing', trialEndsAt: at(-8) }, now).kind).toBe('read_only');
-    expect(subscriptionNotice({ subscriptionStatus: 'active', trialEndsAt: at(-80) }, now).kind).toBe('none');
-    expect(subscriptionNotice({ subscriptionStatus: 'past_due', trialEndsAt: at(-80) }, now).kind).toBe('payment_due');
-    expect(subscriptionNotice({ subscriptionStatus: 'expired', trialEndsAt: at(-80) }, now).kind).toBe('read_only');
+    expect(subscriptionNotice({ subscriptionStatus: 'trialing', trialEndsAt: at(-0.01) }, now).kind).toBe('ended');
+    expect(canUseNow({ subscriptionStatus: 'active', trialEndsAt: null, periodEnd: at(-2) }, now)).toBe(true);
+    expect(canUseNow({ subscriptionStatus: 'active', trialEndsAt: null, periodEnd: at(-4) }, now)).toBe(false);
+    expect(subscriptionNotice({ subscriptionStatus: 'past_due', trialEndsAt: null, periodEnd: at(-1) }, now).kind).toBe('payment_due');
+    expect(subscriptionNotice({ subscriptionStatus: 'expired', trialEndsAt: at(-80) }, now).kind).toBe('ended');
+    expect(canUseNow({ subscriptionStatus: 'trialing', trialEndsAt: at(-30), complimentary: true }, now)).toBe(true);
   });
 });
 
-describe('Plan and billing screen', () => {
-  it('shows both plans with prices in demo mode, and says payments are not switched on', async () => {
-    render(
-      <AuthProvider backend={null}>
-        <MemoryRouter initialEntries={['/settings']}>
-          <AppRoutes />
-        </MemoryRouter>
-      </AuthProvider>,
-    );
-    expect(await screen.findByText('₹299')).toBeInTheDocument();
-    expect(screen.getByText('₹599')).toBeInTheDocument();
+function renderApp(backend: ReturnType<typeof createFakeBackend>['backend'] | null, path: string) {
+  return render(
+    <AuthProvider backend={backend}>
+      <MemoryRouter initialEntries={[path]}>
+        <AppRoutes />
+      </MemoryRouter>
+    </AuthProvider>,
+  );
+}
+
+const user = { id: 'user-1', email: 'a@alpha.test', fullName: 'Asha' };
+
+describe('Subscription in the app', () => {
+  it('shows the single ₹999 plan in demo mode, and says online payment is not switched on', async () => {
+    renderApp(null, '/settings');
+    expect(await screen.findByText('₹999')).toBeInTheDocument();
     expect(screen.getByText(/Online payment is not switched on yet/)).toBeInTheDocument();
   });
 
-  it('warns everyone when the trial is about to end, and tells non-owners to ask the owner', async () => {
+  it('lets a business in its trial use the app, with a quiet days-left line and no banner', async () => {
+    const { backend } = createFakeBackend({ user, workspaces: [workspace('Alpha Fabricators', 't1')] });
+    renderApp(backend, '/jobs');
+    expect((await screen.findAllByText(/Free trial: 10 days left/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Your free trial has ended/)).not.toBeInTheDocument();
+  });
+
+  it('shows one hideable line in the last 3 days, telling non-owners to ask the owner', async () => {
     const ending = { ...workspace('Alpha Fabricators', 't1'), trialEndsAt: new Date(Date.now() + 2 * DAY), role: 'employee' as const };
-    const { backend } = createFakeBackend({ user: { id: 'user-1', email: 'a@alpha.test', fullName: 'Asha' }, workspaces: [ending] });
-    render(
-      <AuthProvider backend={backend}>
-        <MemoryRouter initialEntries={['/jobs']}>
-          <AppRoutes />
-        </MemoryRouter>
-      </AuthProvider>,
-    );
-    expect(await screen.findByText(/The free trial ends in 2 days/)).toBeInTheDocument();
+    const { backend } = createFakeBackend({ user, workspaces: [ending] });
+    renderApp(backend, '/jobs');
+    expect(await screen.findByText(/Your free trial ends in 2 days/)).toBeInTheDocument();
     expect(screen.getByText(/Please tell the business owner/)).toBeInTheDocument();
+  });
+
+  it('shows the subscribe screen once the trial has ended, but keeps Help open', async () => {
+    const ended = { ...workspace('Alpha Fabricators', 't1'), trialEndsAt: new Date(Date.now() - DAY) };
+    const { backend } = createFakeBackend({ user, workspaces: [ended] });
+    renderApp(backend, '/jobs');
+    expect(await screen.findByText('Your free trial has ended')).toBeInTheDocument();
+    expect(screen.getByText('₹999')).toBeInTheDocument();
+    expect(screen.getByText(/nothing is deleted/)).toBeInTheDocument();
+  });
+
+  it('tells an employee to ask the owner instead of showing a price', async () => {
+    const ended = { ...workspace('Alpha Fabricators', 't1'), trialEndsAt: new Date(Date.now() - DAY), role: 'employee' as const };
+    const { backend } = createFakeBackend({ user, workspaces: [ended] });
+    renderApp(backend, '/jobs');
+    expect(await screen.findByText(/Ask the owner of Alpha Fabricators to subscribe/)).toBeInTheDocument();
+    expect(screen.queryByText('₹999')).not.toBeInTheDocument();
+  });
+
+  it('lets the JobFlow owner in for free and never shows him a price or trial reminder', async () => {
+    const ended = { ...workspace('RK Digitals', 't1'), trialEndsAt: new Date(Date.now() - DAY) };
+    const { backend } = createFakeBackend({ user, workspaces: [ended], platformAdmin: true });
+    renderApp(backend, '/settings');
+    expect(await screen.findByText(/This is your own business/)).toBeInTheDocument();
+    expect(screen.queryByText('₹999')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Your free trial has ended/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Free trial:/)).not.toBeInTheDocument();
   });
 });

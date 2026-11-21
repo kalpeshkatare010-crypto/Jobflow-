@@ -79,6 +79,19 @@ export interface PlatformStats {
   }[];
 }
 
+/** What the server says about one business's access (public.tenant_access). */
+export interface TenantAccess {
+  canUse: boolean;
+  /** The JobFlow owner's own business: free, no plan or price shown. */
+  complimentary: boolean;
+  isAdmin: boolean;
+  status: SubscriptionStatus;
+  trialEndsAt: Date | null;
+  periodEnd: Date | null;
+  pricePaise: number | null;
+  checkedAt: Date;
+}
+
 export interface AuthBackend {
   getUser(): Promise<AuthUser | null>;
   /** Calls back when the person signs in or out (also from another tab). Returns an unsubscribe function. */
@@ -103,6 +116,8 @@ export interface AuthBackend {
   isPlatformAdmin(): Promise<boolean>;
   /** Refused by the server for anyone not on the owner list. */
   platformStats(): Promise<PlatformStats>;
+  /** Whether this business can use JobFlow now (trial, subscription or the owner's own). */
+  tenantAccess(tenantId: string): Promise<TenantAccess>;
   createBusiness(name: string, ownerName: string): Promise<string>;
   acceptInvitation(token: string): Promise<string>;
   // Team management (owners and admins; the server checks permission)

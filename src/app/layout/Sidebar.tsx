@@ -5,6 +5,8 @@ import { cn } from '../../lib/cn';
 import { NAV_ITEMS } from './nav';
 import { Wordmark } from './Logo';
 import { InstallAppButton } from '../pwa/PwaControls';
+import { useAppUpdates } from '../updates';
+import { useTrialLine } from '../../features/billing/PlanSection';
 
 interface NavListProps {
   collapsed: boolean;
@@ -12,6 +14,8 @@ interface NavListProps {
 }
 
 function NavList({ collapsed, onNavigate }: NavListProps) {
+  const { state } = useAppUpdates();
+  const updateWaiting = state.kind === 'available';
   return (
     <ul className="flex flex-col gap-1">
       {NAV_ITEMS.map((item) => {
@@ -34,8 +38,16 @@ function NavList({ collapsed, onNavigate }: NavListProps) {
                 )
               }
             >
-              <Icon aria-hidden className="size-[18px] shrink-0" />
-              <span className={collapsed ? 'sr-only' : undefined}>{item.label}</span>
+              <span className="relative shrink-0">
+                <Icon aria-hidden className="size-[18px]" />
+                {item.path === '/updates' && updateWaiting ? (
+                  <span aria-hidden className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-signal ring-2 ring-canvas" />
+                ) : null}
+              </span>
+              <span className={collapsed ? 'sr-only' : undefined}>
+                {item.label}
+                {item.path === '/updates' && updateWaiting ? <span className="sr-only"> (new version available)</span> : null}
+              </span>
             </NavLink>
           </li>
         );
@@ -45,8 +57,14 @@ function NavList({ collapsed, onNavigate }: NavListProps) {
 }
 
 function Credit({ collapsed }: { collapsed: boolean }) {
+  const trial = useTrialLine();
   if (collapsed) return null;
-  return <p className="px-3 text-[12px] text-ink-500">Developed by RK Digitals</p>;
+  return (
+    <div className="flex flex-col gap-1 px-3 text-[12px] text-ink-500">
+      {trial ? <p className="text-ink-700">{trial}</p> : null}
+      <p>Developed by RK Digitals</p>
+    </div>
+  );
 }
 
 interface SidebarProps {

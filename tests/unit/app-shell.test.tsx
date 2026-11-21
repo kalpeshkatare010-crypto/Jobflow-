@@ -52,6 +52,7 @@ describe('App shell', () => {
       'Inventory',
       'Reports',
       'Settings',
+      'Updates',
       'Help & Support',
     ]);
   });

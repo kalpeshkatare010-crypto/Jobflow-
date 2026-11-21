@@ -27,8 +27,13 @@ select test.ok((select count(*) = 1 from public.memberships where tenant_id = :'
   'creating a business makes the creator its only owner');
 select test.ok((select job_prefix = 'JOB' from public.tenant_settings where tenant_id = :'tenant_a'),
   'creating a business creates its settings');
-select test.ok((select subscription_status = 'trialing' and plan_code = 'starter' from public.tenants where id = :'tenant_a'),
-  'a new business starts on a Starter trial');
+select test.ok((select subscription_status = 'trialing' and plan_code = 'standard' and trial_ends_at > now() + interval '13 days'
+  from public.tenants where id = :'tenant_a'), 'a new business starts a 14-day trial of the JobFlow plan');
+-- These tests check limit enforcement with a small test-only plan (the real plan has no limits).
+insert into public.plans (code, name, price_inr_paise, limits, sort_order)
+values ('test_limited', 'Limited (tests)', 0, '{"logins": 3, "employees": 15, "workflows": 2, "open_jobs": 100}', 9)
+on conflict (code) do nothing;
+update public.tenants set plan_code = 'test_limited' where id in (:'tenant_a', :'tenant_b');
 
 -- ---------------------------------------------------------------------------
 -- Isolation: each owner sees only their own business
@@ -50,7 +55,7 @@ select test.throws(
   '42501', 'owner A cannot add an employee to business B');
 
 select test.throws(
-  format($q$update public.tenants set plan_code = 'professional' where id = %L$q$, :'tenant_a'),
+  format($q$update public.tenants set plan_code = 'standard' where id = %L$q$, :'tenant_a'),
   '42501', 'owner cannot change the plan directly');
 select test.throws(
   format($q$update public.tenants set subscription_status = 'active' where id = %L$q$, :'tenant_a'),
@@ -132,11 +137,11 @@ reset role;
 select test.ok((select name = 'Alpha Fabricators' from public.tenants where id = :'tenant_a'),
   'an employee cannot change business settings');
 
--- Plan limit on logins: Starter allows 3 (owner + Chetan + 1 more)
+-- Plan limit on logins: the limited test plan allows 3 (owner + Chetan + 1 more)
 select test.as_user(:'user_a');
 select public.create_invitation(:'tenant_a', 'dev@alpha.test', 'production_manager') as token_d \gset
 select test.throws(format($q$select public.create_invitation(%L, 'esha@alpha.test', 'employee')$q$, :'tenant_a'),
-  'plan_limit:logins', 'Starter plan stops at 3 logins, counting open invitations');
+  'plan_limit:logins', 'a plan with a login limit stops at it, counting open invitations');
 reset role;
 
 select test.as_user(:'user_d');
@@ -174,9 +179,9 @@ select test.ok((select count(*) = 0 from public.employees), 'a removed member ca
 reset role;
 
 -- ---------------------------------------------------------------------------
--- Subscription enforcement: read-only after trial and grace end
+-- Subscription enforcement: the trial ends, and work stops until a subscription
 -- ---------------------------------------------------------------------------
-update public.tenants set trial_ends_at = now() - interval '8 days' where id = :'tenant_a';
+update public.tenants set trial_ends_at = now() - interval '1 hour' where id = :'tenant_a';
 select test.as_user(:'user_a');
 select test.ok((select count(*) = 1 from public.tenants), 'an expired business can still read its data');
 select test.throws(
@@ -185,23 +190,23 @@ select test.throws(
 select test.throws(format($q$select public.create_invitation(%L, 'esha@alpha.test', 'employee')$q$, :'tenant_a'),
   'read_only', 'an expired business cannot invite people');
 reset role;
-update public.tenants set trial_ends_at = now() - interval '6 days' where id = :'tenant_a';
+update public.tenants set trial_ends_at = now() + interval '1 day' where id = :'tenant_a';
 select test.as_user(:'user_a');
-insert into public.employees (id, tenant_id, name) values (gen_random_uuid(), :'tenant_a', 'In grace');
-select test.ok(true, 'writes still work inside the 7-day grace period');
+insert into public.employees (id, tenant_id, name) values (gen_random_uuid(), :'tenant_a', 'Still on trial');
+select test.ok(true, 'writes work while the trial runs');
 reset role;
 
 -- ---------------------------------------------------------------------------
--- Plan limit on employees: Starter allows 15 active
+-- Plan limit on employees: the limited test plan allows 15 active
 -- ---------------------------------------------------------------------------
 select test.as_user(:'user_b');
 insert into public.employees (id, tenant_id, name)
 select gen_random_uuid(), :'tenant_b', 'Worker ' || n from generate_series(1, 15) as n;
 select test.throws(
   format($q$insert into public.employees (id, tenant_id, name) values (gen_random_uuid(), %L, 'Worker 16')$q$, :'tenant_b'),
-  'plan_limit:employees', 'Starter plan stops at 15 active employees');
+  'plan_limit:employees', 'a plan with an employee limit stops at it');
 reset role;
-update public.tenants set plan_code = 'professional' where id = :'tenant_b';
+update public.tenants set plan_code = 'standard' where id = :'tenant_b';
 select test.as_user(:'user_b');
 insert into public.employees (id, tenant_id, name) values (gen_random_uuid(), :'tenant_b', 'Worker 16');
 select test.ok(true, 'Professional plan has no employee limit');

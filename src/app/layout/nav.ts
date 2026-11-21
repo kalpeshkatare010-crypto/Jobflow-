@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  RefreshCw,
   ChartColumn,
   ClipboardList,
   Factory,
@@ -33,6 +34,7 @@ export const NAV_ITEMS: NavItem[] = [
   { path: '/inventory', label: 'Inventory', icon: Boxes, summary: 'Materials, stock movements and low-stock alerts.', milestone: 8 },
   { path: '/reports', label: 'Reports', icon: ChartColumn, summary: 'Job, production, rejection and stock reports with CSV export.', milestone: 9 },
   { path: '/settings', label: 'Settings', icon: Settings, summary: 'Business profile, users and roles, numbering, units and billing.', milestone: 2 },
+  { path: '/updates', label: 'Updates', icon: RefreshCw, summary: 'Your JobFlow version, new updates and what is new.', milestone: 12 },
   { path: '/help', label: 'Help & Support', icon: LifeBuoy, summary: 'Guides for setting up workflows, jobs and offline use.', milestone: 12 },
 ];
 

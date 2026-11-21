@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { isNativeApp } from './native';
 
 /** Where signed Android builds are published (public, no key needed to read). */
@@ -83,45 +83,64 @@ export type UpdateState =
   | { kind: 'installing'; update: AvailableUpdate }
   | { kind: 'error'; message: string; update?: AvailableUpdate };
 
-/** Checks on open and on return (at most every 3 hours); "Check now" ignores the wait. */
-export function useAppUpdates() {
-  const native = isNativeApp();
-  const [state, setState] = useState<UpdateState>({ kind: 'idle' });
+// One shared update status for the whole app (menu dot, banner, Updates screen).
+let current: UpdateState = { kind: 'idle' };
+const listeners = new Set<() => void>();
+function set(next: UpdateState) {
+  current = next;
+  listeners.forEach((l) => l());
+}
 
-  const check = useCallback(
-    async (force = false) => {
-      if (!native) return;
-      const last = Number(localStorage.getItem(LAST_CHECK) ?? 0);
-      if (!force && Date.now() - last < CHECK_EVERY_MS) return;
-      if (force) setState({ kind: 'checking' });
-      try {
-        const { installed, update } = await findUpdate();
-        localStorage.setItem(LAST_CHECK, String(Date.now()));
-        setState(update ? { kind: 'available', installed, update } : { kind: 'current', installed });
-      } catch {
-        if (force) setState({ kind: 'error', message: 'Could not check for updates. Check your internet and try again.' });
-      }
-    },
-    [native],
-  );
+let lastAuto = 0;
+async function checkNow(force: boolean): Promise<void> {
+  if (!isNativeApp()) return;
+  if (current.kind === 'downloading' || current.kind === 'installing') return;
+  const stored = Number(localStorage.getItem(LAST_CHECK) ?? 0);
+  // A quiet check still runs once per app start, so the menu dot is right after updating.
+  if (!force && lastAuto !== 0 && Date.now() - Math.max(stored, lastAuto) < CHECK_EVERY_MS) return;
+  lastAuto = Date.now();
+  if (force) set({ kind: 'checking' });
+  try {
+    const { installed, update } = await findUpdate();
+    localStorage.setItem(LAST_CHECK, String(Date.now()));
+    set(update ? { kind: 'available', installed, update } : { kind: 'current', installed });
+  } catch {
+    if (force) set({ kind: 'error', message: 'Could not check for updates. Check your internet and try again.' });
+  }
+}
 
+async function installNow(update: AvailableUpdate): Promise<void> {
+  set({ kind: 'downloading', update, fraction: 0 });
+  try {
+    await downloadAndInstall(update, (fraction) => set({ kind: 'downloading', update, fraction }));
+    set({ kind: 'installing', update });
+  } catch {
+    set({ kind: 'error', message: 'The download did not finish. Check your internet and try again.', update });
+  }
+}
+
+/** Starts automatic checks: on open and whenever the app comes back (at most every 3 hours). Call once. */
+export function useUpdateChecks(): void {
   useEffect(() => {
-    if (!native) return;
-    void check();
-    const onVisible = () => document.visibilityState === 'visible' && void check();
+    if (!isNativeApp()) return;
+    void checkNow(false);
+    const onVisible = () => document.visibilityState === 'visible' && void checkNow(false);
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [native, check]);
-
-  const install = useCallback(async (update: AvailableUpdate) => {
-    setState({ kind: 'downloading', update, fraction: 0 });
-    try {
-      await downloadAndInstall(update, (fraction) => setState({ kind: 'downloading', update, fraction }));
-      setState({ kind: 'installing', update });
-    } catch {
-      setState({ kind: 'error', message: 'The download did not finish. Check your internet and try again.', update });
-    }
   }, []);
+}
 
+export function useAppUpdates() {
+  const native = isNativeApp();
+  const state = useSyncExternalStore(
+    (l) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    () => current,
+    () => current,
+  );
+  const check = useCallback((force = false) => checkNow(force), []);
+  const install = useCallback((update: AvailableUpdate) => installNow(update), []);
   return { native, state, check, install };
 }

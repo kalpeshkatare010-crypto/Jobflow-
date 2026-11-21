@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useLocalData } from '../offline/LocalDataProvider';
 import { toSummary, useJobViews } from '../features/jobs/jobData';
 import { useMaterialViews } from '../features/inventory/InventoryPage';
-import { subscriptionNotice } from '../domain/plans';
+import { useAccess } from '../features/billing/access';
 import { todayIso } from '../domain/production';
 import { planNotifications, type PlannedNotification } from './planner';
 import { readMemory, useNotificationPrefs, writeMemory } from './prefs';
@@ -26,6 +26,7 @@ export function useReminders(): void {
   const materials = useMaterialViews();
   const entriesToday = useLiveQuery(() => db.productionEntries.where('entry_date').equals(todayIso()).count(), [db]);
   const lastKey = useRef('');
+  const { notice, complimentary } = useAccess();
 
   useEffect(() => {
     if (!native || status !== 'signed_in' || !activeWorkspace || !views || !materials || entriesToday === undefined) return;
@@ -35,7 +36,6 @@ export function useReminders(): void {
       .filter((m) => m.level !== 'ok' && m.material.is_active)
       .map((m) => ({ name: m.material.name, onHand: m.onHand, minimum: Number(m.material.min_stock), unit: m.material.unit }));
     const lowKey = low.map((m) => m.name).sort().join('|') || null;
-    const notice = subscriptionNotice(activeWorkspace, now);
     const plan = planNotifications({
       now,
       prefs,
@@ -43,7 +43,7 @@ export function useReminders(): void {
       entriesToday,
       lowStock: low,
       lowStockAlreadySent: lowKey !== null && memory.lowStockKey === lowKey && Date.now() - (memory.lowStockSentAt ?? 0) < LOW_STOCK_REPEAT_MS,
-      trialDaysLeft: notice.kind === 'trial' || notice.kind === 'trial_ending' ? notice.daysLeft : null,
+      trialDaysLeft: !complimentary && (notice.kind === 'trial' || notice.kind === 'trial_ending') ? notice.daysLeft : null,
       isOwner: activeWorkspace.role === 'owner',
       factsShown: memory.factsShown,
     });
@@ -54,7 +54,7 @@ export function useReminders(): void {
     void schedule(plan).then(() => {
       if (plan.some((n) => n.kind === 'low_stock')) writeMemory({ ...readMemory(), lowStockKey: lowKey, lowStockSentAt: Date.now() });
     });
-  }, [native, status, activeWorkspace, views, materials, entriesToday, prefs]);
+  }, [native, status, activeWorkspace, views, materials, entriesToday, prefs, notice, complimentary]);
 
   // Tapping a notification opens its screen; a fact counts as seen once delivered or tapped.
   useEffect(() => {

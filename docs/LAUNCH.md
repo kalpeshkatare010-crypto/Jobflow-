@@ -33,7 +33,7 @@ Everything in the app is built and tested. What is left needs **your** accounts,
 | Supabase **Pro** plan | Free projects pause after a week idle and have no automatic backups | about US$25 per month |
 | Email sending service (custom SMTP in Supabase) | The built-in sender is for testing only and has a low hourly limit | free tiers exist; depends on the provider |
 | Your own domain (for example jobflow.yourname.in) | A trustworthy address for the website and emails | about ₹800–1,500 per year |
-| Payment provider (Razorpay, Cashfree or similar) | Online payment for ₹299 / ₹599 plans | a percentage per payment, set by the provider |
+| Payment provider (Razorpay, Cashfree or similar) | Online payment for the ₹999 plan | a percentage per payment, set by the provider |
 | Google Play listing (optional) | Install from the Play Store instead of the APK link | one-time developer fee set by Google |
 | Privacy policy and terms of service | Required by Google, Play Store and customers | needs RK Digitals' real business details; not written for you |
 
@@ -46,9 +46,9 @@ When a business pays you (for example by UPI), open Supabase → **SQL Editor**,
 ```sql
 update public.tenants
 set subscription_status = 'active',
-    plan_code = 'starter',               -- or 'professional'
+    plan_code = 'standard',              -- the one ₹999 plan
     current_period_end = '2026-12-31'    -- the last day they have paid for
 where name = 'Exact business name';
 ```
 
-Check that it says `UPDATE 1`. If it says `UPDATE 0`, the name did not match exactly. When a month is not paid, set `subscription_status = 'past_due'`: the business keeps working for 7 days after `current_period_end`, then becomes read-only. Nothing is ever deleted.
+Check that it says `UPDATE 1`. If it says `UPDATE 0`, the name did not match exactly. When a month is not paid, set `subscription_status = 'past_due'`: the business keeps working for 3 days after `current_period_end`, then sees the subscribe screen. Nothing is ever deleted. Your own businesses (signed in with your admin email) never need this.

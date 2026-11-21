@@ -1,45 +1,31 @@
 /**
- * Subscription plans. Prices are fixed by the owner (DECISIONS.md D-01) and
- * must match public.plans in supabase/migrations (a test checks this).
- * A null limit means unlimited.
+ * JobFlow has one plan (DECISIONS.md D-36): ₹999 per business per month, no
+ * limits, after a 14-day free trial. Must match public.plans (a test checks).
  */
 export interface Plan {
-  code: 'starter' | 'professional';
+  code: 'standard';
   name: string;
   pricePaise: number;
   summary: string;
-  limits: { logins: number | null; employees: number | null; workflows: number | null; openJobs: number | null };
 }
 
-export const PLANS: Plan[] = [
-  {
-    code: 'starter',
-    name: 'Starter',
-    pricePaise: 29900,
-    summary: 'For a small shop getting its jobs off paper and WhatsApp.',
-    limits: { logins: 3, employees: 15, workflows: 2, openJobs: 100 },
-  },
-  {
-    code: 'professional',
-    name: 'Professional',
-    pricePaise: 59900,
-    summary: 'For a growing unit with more people, products and jobs running at once.',
-    limits: { logins: 10, employees: null, workflows: null, openJobs: null },
-  },
-];
+export const PLAN: Plan = {
+  code: 'standard',
+  name: 'JobFlow',
+  pricePaise: 99900,
+  summary: 'Everything in JobFlow for your whole business: unlimited people, workflows and jobs.',
+};
+
+export const PLANS: Plan[] = [PLAN];
 
 export const TRIAL_DAYS = 14;
+
+/** Days after a paid month ends (or a payment is missed) before JobFlow pauses. Matches private.tenant_can_write. */
+export const PAYMENT_GRACE_DAYS = 3;
 
 export function formatRupees(paise: number): string {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(paise / 100);
 }
-
-export function limitLabel(value: number | null): string {
-  return value === null ? 'Unlimited' : String(value);
-}
-
-/** Days after the trial (or a missed payment) before the workspace becomes read-only. Matches tenants.offline_grace_days. */
-export const GRACE_DAYS = 7;
 
 export function planByCode(code: string): Plan | undefined {
   return PLANS.find((p) => p.code === code);
@@ -49,28 +35,43 @@ export type SubscriptionNotice =
   | { kind: 'none' }
   | { kind: 'trial'; daysLeft: number; endsAt: Date }
   | { kind: 'trial_ending'; daysLeft: number; endsAt: Date }
-  | { kind: 'grace'; readOnlyFrom: Date }
   | { kind: 'payment_due' }
-  | { kind: 'read_only' };
+  | { kind: 'ended' };
 
 const DAY = 86_400_000;
 
-/** What to tell the business about its subscription, mirroring private.tenant_can_write. */
-export function subscriptionNotice(
-  ws: { subscriptionStatus: string; trialEndsAt: Date; isDemo?: boolean },
-  now: Date,
-): SubscriptionNotice {
-  if (ws.isDemo || ws.subscriptionStatus === 'active') return { kind: 'none' };
-  if (ws.subscriptionStatus === 'trialing') {
-    const msLeft = ws.trialEndsAt.getTime() - now.getTime();
-    if (msLeft > 0) {
-      const daysLeft = Math.ceil(msLeft / DAY);
-      return daysLeft <= 3 ? { kind: 'trial_ending', daysLeft, endsAt: ws.trialEndsAt } : { kind: 'trial', daysLeft, endsAt: ws.trialEndsAt };
-    }
-    const readOnlyFrom = new Date(ws.trialEndsAt.getTime() + GRACE_DAYS * DAY);
-    return now < readOnlyFrom ? { kind: 'grace', readOnlyFrom } : { kind: 'read_only' };
+export interface AccessFacts {
+  subscriptionStatus: string;
+  trialEndsAt: Date | null;
+  periodEnd?: Date | null;
+  complimentary?: boolean;
+  isDemo?: boolean;
+}
+
+/** Whether the business can use JobFlow now. Mirrors private.tenant_can_write on the server. */
+export function canUseNow(ws: AccessFacts, now: Date): boolean {
+  if (ws.isDemo || ws.complimentary) return true;
+  const graceEnd = ws.periodEnd ? ws.periodEnd.getTime() + PAYMENT_GRACE_DAYS * DAY : null;
+  switch (ws.subscriptionStatus) {
+    case 'trialing':
+      return ws.trialEndsAt !== null && now.getTime() < ws.trialEndsAt.getTime();
+    case 'active':
+      return graceEnd === null || now.getTime() < graceEnd;
+    case 'past_due':
+      return graceEnd !== null && now.getTime() < graceEnd;
+    default:
+      return false;
   }
-  // A missed payment keeps working for the grace period after the paid month ends (checked on the server).
+}
+
+/** What to tell the business about its subscription. */
+export function subscriptionNotice(ws: AccessFacts, now: Date): SubscriptionNotice {
+  if (ws.isDemo || ws.complimentary) return { kind: 'none' };
+  if (!canUseNow(ws, now)) return { kind: 'ended' };
+  if (ws.subscriptionStatus === 'trialing' && ws.trialEndsAt) {
+    const daysLeft = Math.max(1, Math.ceil((ws.trialEndsAt.getTime() - now.getTime()) / DAY));
+    return daysLeft <= 3 ? { kind: 'trial_ending', daysLeft, endsAt: ws.trialEndsAt } : { kind: 'trial', daysLeft, endsAt: ws.trialEndsAt };
+  }
   if (ws.subscriptionStatus === 'past_due') return { kind: 'payment_due' };
-  return { kind: 'read_only' };
+  return { kind: 'none' };
 }

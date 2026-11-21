@@ -7,6 +7,7 @@ import {
   type Invitation,
   type Member,
   type PlatformStats,
+  type TenantAccess,
   type MemberRole,
   type SubscriptionStatus,
   type Workspace,
@@ -21,7 +22,7 @@ const HINT_MESSAGES: Record<string, string> = {
   invite_used: 'This invitation has already been used.',
   invite_expired: 'This invitation has expired. Ask the business owner for a new one.',
   invite_wrong_email: 'This invitation was sent to a different email address. Sign in with that email to join.',
-  read_only: 'This workspace is read-only until the subscription is renewed.',
+  read_only: 'The free trial or subscription has ended. Subscribe to keep making changes; nothing is deleted.',
   forbidden: 'You do not have permission to do that.',
   already_member: 'This person is already a member of the business.',
   invalid_email: 'Enter a valid email address.',
@@ -204,6 +205,23 @@ export function createSupabaseBackend(client: SupabaseClient): AuthBackend {
       const { data, error } = await client.rpc('platform_stats');
       if (error) throw fromDatabase(error);
       return data as PlatformStats;
+    },
+
+    async tenantAccess(tenantId) {
+      const { data, error } = await client.rpc('tenant_access', { p_tenant: tenantId });
+      if (error) throw fromDatabase(error);
+      const row = data as Record<string, unknown>;
+      const date = (v: unknown) => (typeof v === 'string' ? new Date(v) : null);
+      return {
+        canUse: row.canUse === true,
+        complimentary: row.complimentary === true,
+        isAdmin: row.isAdmin === true,
+        status: row.status as TenantAccess['status'],
+        trialEndsAt: date(row.trialEndsAt),
+        periodEnd: date(row.periodEnd),
+        pricePaise: typeof row.pricePaise === 'number' ? row.pricePaise : null,
+        checkedAt: date(row.checkedAt) ?? new Date(),
+      };
     },
 
     async requestPasswordReset(email) {

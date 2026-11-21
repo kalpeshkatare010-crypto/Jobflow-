@@ -10,6 +10,13 @@ select test.create_user('rival@other.test', 'Rival') as rival \gset
 
 select test.as_user(:'owner');
 select public.create_business('Jobs Works') as tenant \gset
+reset role;
+-- These tests check limit enforcement with a small test-only plan (the real plan has no limits).
+insert into public.plans (code, name, price_inr_paise, limits, sort_order)
+values ('test_limited', 'Limited (tests)', 0, '{"logins": 3, "employees": 15, "workflows": 2, "open_jobs": 100}', 9)
+on conflict (code) do nothing;
+update public.tenants set plan_code = 'test_limited' where id = :'tenant';
+select test.as_user(:'owner');
 select public.create_invitation(:'tenant', 'pm@jobs.test', 'production_manager') as pm_token \gset
 reset role;
 select test.as_user(:'pm');
@@ -69,10 +76,10 @@ select test.ok((test.push(:'tenant', 'workflow.save', :'wf', jsonb_build_object(
 
 select test.ok((test.push(:'tenant', 'workflow.save', gen_random_uuid(), jsonb_build_object('name', 'Moulding', 'baseVersion', 0, 'stages', jsonb_build_array(
   jsonb_build_object('id', gen_random_uuid(), 'name', 'Moulding', 'position', 0, 'counts_output', true)))) ->> 'status') = 'applied',
-  'a second workflow fits the Starter plan');
+  'a second workflow fits a 2-workflow plan');
 select test.ok((test.push(:'tenant', 'workflow.save', gen_random_uuid(), jsonb_build_object('name', 'Third', 'baseVersion', 0, 'stages', jsonb_build_array(
   jsonb_build_object('id', gen_random_uuid(), 'name', 'X', 'position', 0, 'counts_output', true)))) ->> 'reason') = 'plan_limit',
-  'the Starter plan stops at 2 workflows');
+  'a 2-workflow plan stops at 2 workflows');
 
 -- Employees through sync
 select test.ok((test.push(:'tenant', 'employee.create', gen_random_uuid(), '{"changes":{"name":"Ravi Shinde","employee_code":"E01"}}') ->> 'status') = 'applied',
@@ -178,7 +185,7 @@ select test.ok(jsonb_array_length(:'pulled'::jsonb -> 'rows' -> 'job_orders') = 
 reset role;
 
 -- Plan limit on open jobs and read-only mode
-update public.plans set limits = jsonb_set(limits, '{open_jobs}', '2') where code = 'starter';
+update public.plans set limits = jsonb_set(limits, '{open_jobs}', '2') where code = 'test_limited';
 select test.as_user(:'pm');
 select test.ok((test.push(:'tenant', 'job.create', gen_random_uuid(), jsonb_build_object(
   'changes', jsonb_build_object('customer_id', :'cust', 'title', 'Third', 'quantity', 1, 'unit', 'pcs'),

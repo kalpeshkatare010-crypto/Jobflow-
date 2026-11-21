@@ -3,7 +3,11 @@ import { Outlet, useLocation } from 'react-router';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { useReminders } from '../../notifications/useReminders';
 import { UpdateBanner } from '../UpdateViews';
+import { useUpdateChecks } from '../updates';
 import { SubscriptionBanner } from '../../features/billing/PlanSection';
+import { AccessProvider, useAccess } from '../../features/billing/access';
+import { SubscribeScreen } from '../../features/billing/SubscribeScreen';
+import { Spinner } from '../../components/ui';
 import { readPreference, writePreference } from '../../lib/storage';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -18,7 +22,9 @@ import { ROLE_LABEL } from '../../auth/types';
 export function AppShell() {
   return (
     <LocalDataProvider>
-      <Shell />
+      <AccessProvider>
+        <Shell />
+      </AccessProvider>
     </LocalDataProvider>
   );
 }
@@ -46,7 +52,11 @@ function Shell() {
   const local = useLocalData();
   useHomeScreenWidgets();
   useReminders();
+  useUpdateChecks();
   const isDemo = auth.status === 'demo';
+  const access = useAccess();
+  // Help and Updates stay open after the trial so people can get help and update the app.
+  const alwaysOpen = location.pathname === '/help' || location.pathname === '/updates';
   const userName = isDemo ? DEMO_SESSION.userName : auth.user?.fullName || auth.user?.email || 'Signed in';
   const businessName = isDemo ? DEMO_SESSION.businessName : (auth.activeWorkspace?.name ?? '');
   const firstName = userName.split(/[\s@]/)[0];
@@ -101,8 +111,18 @@ function Shell() {
           <div key={location.pathname} className="animate-page-in">
             <ErrorBoundary key={location.pathname}>
               <UpdateBanner />
-              <SubscriptionBanner />
-              <Outlet />
+              {!access.ready && !alwaysOpen ? (
+                <div className="grid place-items-center py-20">
+                  <Spinner />
+                </div>
+              ) : access.canUse || alwaysOpen ? (
+                <>
+                  <SubscriptionBanner />
+                  <Outlet />
+                </>
+              ) : (
+                <SubscribeScreen />
+              )}
             </ErrorBoundary>
           </div>
         </main>
