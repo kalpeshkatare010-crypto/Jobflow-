@@ -56,16 +56,15 @@ jobs:
       - uses: supabase/setup-cli@v1
         if: steps.settings.outputs.ready == 'true'
         with:
-          version: latest
+          version: 3.2.0
 
       - name: Dump roles, schema and data
         if: steps.settings.outputs.ready == 'true'
         run: |
           mkdir -p backup
-          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
-          supabase db dump --linked --password "$SUPABASE_DB_PASSWORD" --role-only -f backup/roles.sql
-          supabase db dump --linked --password "$SUPABASE_DB_PASSWORD" -f backup/schema.sql
-          supabase db dump --linked --password "$SUPABASE_DB_PASSWORD" --data-only --use-copy -f backup/data.sql
+          supabase db dump --remote="$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --role-only -f backup/roles.sql
+          supabase db dump --remote="$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" -f backup/schema.sql
+          supabase db dump --remote="$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --data-only --use-copy -f backup/data.sql
           for f in roles schema data; do
             test -s "backup/$f.sql" || { echo "backup/$f.sql is empty; stopping."; exit 1; }
           done
