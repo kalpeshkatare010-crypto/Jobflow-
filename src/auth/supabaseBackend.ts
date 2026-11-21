@@ -1,4 +1,5 @@
 import { createClient, type AuthError, type PostgrestError, type SupabaseClient, type User } from '@supabase/supabase-js';
+import { isNativeApp } from '../app/native';
 import {
   UserFacingError,
   type AuthBackend,
@@ -52,6 +53,17 @@ function fromAuth(error: AuthError): UserFacingError {
     case 'over_email_send_rate_limit':
     case 'over_request_rate_limit':
       return new UserFacingError('Too many attempts. Wait a minute and try again.', code);
+    case 'otp_expired':
+      return new UserFacingError('That code is wrong or has expired. Check the latest email, or send a new code.', code);
+    case 'otp_disabled':
+    case 'signup_disabled':
+      return new UserFacingError('Sign-in by email code is not switched on for this app yet.', code);
+    case 'provider_disabled':
+    case 'validation_failed':
+      if (/provider is not enabled/i.test(error.message)) {
+        return new UserFacingError('Google sign-in is not switched on for this app yet. Use email instead.', code);
+      }
+      return new UserFacingError(error.message || 'Sign-in failed. Try again.', code);
     case 'same_password':
       return new UserFacingError('Choose a password different from your current one.', code);
     default:
@@ -81,8 +93,24 @@ interface MembershipRow {
   } | null;
 }
 
+/** Where Google and emailed links return to inside the Android app (see AndroidManifest.xml). */
+export const NATIVE_CALLBACK = 'com.rkdigitals.jobflow://auth/callback';
+
+/** Query and fragment parameters of a redirect URL, merged. */
+export function redirectParams(url: string): URLSearchParams {
+  const merged = new URLSearchParams();
+  const queryStart = url.indexOf('?');
+  const hashStart = url.indexOf('#');
+  if (queryStart >= 0) new URLSearchParams(url.slice(queryStart + 1, hashStart > queryStart ? hashStart : undefined)).forEach((v, k) => merged.set(k, v));
+  if (hashStart >= 0) new URLSearchParams(url.slice(hashStart + 1)).forEach((v, k) => merged.set(k, v));
+  return merged;
+}
+
 export function createSupabaseBackend(client: SupabaseClient): AuthBackend {
   const redirect = (path: string) => `${window.location.origin}${path}`;
+  // Links in emails must open the app on a phone, and the website in a browser.
+  const emailReturn = (next: string) =>
+    isNativeApp() ? `${NATIVE_CALLBACK}?next=${encodeURIComponent(next)}` : redirect(next === '/' ? '/auth/callback' : next);
 
   return {
     async getUser() {
@@ -104,14 +132,70 @@ export function createSupabaseBackend(client: SupabaseClient): AuthBackend {
       const { data, error } = await client.auth.signUp({
         email: email.trim(),
         password,
-        options: { data: { full_name: fullName.trim() }, emailRedirectTo: redirect('/') },
+        options: { data: { full_name: fullName.trim() }, emailRedirectTo: emailReturn('/') },
       });
       if (error) throw fromAuth(error);
       return { needsEmailConfirmation: !data.session };
     },
 
+    async signInWithGoogle() {
+      const native = isNativeApp();
+      const { data, error } = await client.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: native ? NATIVE_CALLBACK : redirect('/auth/callback'),
+          // In the app, Google must open in the phone's browser: Google refuses sign-in inside app web views.
+          skipBrowserRedirect: native,
+          queryParams: { prompt: 'select_account' },
+        },
+      });
+      if (error) throw fromAuth(error);
+      if (native && data.url) {
+        const { Browser } = await import('@capacitor/browser');
+        await Browser.open({ url: data.url, presentationStyle: 'popover' });
+      }
+    },
+
+    async sendSignInCode(email, fullName) {
+      const { error } = await client.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: emailReturn('/'),
+          ...(fullName?.trim() ? { data: { full_name: fullName.trim() } } : {}),
+        },
+      });
+      if (error) throw fromAuth(error);
+    },
+
+    async verifySignInCode(email, code) {
+      const { error } = await client.auth.verifyOtp({ email: email.trim(), token: code.replace(/\s/g, ''), type: 'email' });
+      if (error) throw fromAuth(error);
+    },
+
+    async finishRedirectSignIn(url) {
+      const params = redirectParams(url);
+      const problem = params.get('error_description') ?? params.get('error');
+      if (problem) {
+        throw new UserFacingError(
+          /access_denied|cancel/i.test(problem) ? 'Sign-in was cancelled.' : `Sign-in did not finish: ${problem.replace(/\+/g, ' ')}`,
+          'redirect_error',
+        );
+      }
+      // On the web the client finishes the sign-in itself when the page loads.
+      const { data } = await client.auth.getSession();
+      if (data.session) return;
+      const code = params.get('code');
+      if (code) {
+        const { error } = await client.auth.exchangeCodeForSession(code);
+        if (error) throw new UserFacingError('This sign-in link has expired or was opened in a different browser. Try again.', 'exchange_failed');
+        return;
+      }
+      throw new UserFacingError('This sign-in link is not valid any more. Try again.', 'no_session');
+    },
+
     async requestPasswordReset(email) {
-      const { error } = await client.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirect('/reset-password') });
+      const { error } = await client.auth.resetPasswordForEmail(email.trim(), { redirectTo: emailReturn('/reset-password') });
       if (error) throw fromAuth(error);
     },
 
@@ -245,7 +329,7 @@ export function supabaseClientFromEnv(): SupabaseClient | null {
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
   sharedClient =
     url && anonKey
-      ? createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
+      ? createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } })
       : null;
   return sharedClient;
 }

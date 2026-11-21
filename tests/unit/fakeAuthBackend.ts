@@ -14,6 +14,7 @@ export function createFakeBackend(options: FakeOptions = {}) {
   const listeners = new Set<(user: AuthUser | null) => void>();
   const passwords = new Map<string, string>([['owner@alpha.test', 'correct-horse']]);
   const calls: string[] = [];
+  const sentCodes = new Map<string, string>();
   let members: Member[] = [
     { membershipId: 'm-owner', userId: 'user-1', name: 'Asha Kulkarni', role: 'owner' },
     { membershipId: 'm-ravi', userId: 'user-ravi', name: 'Ravi Shinde', role: 'employee' },
@@ -42,6 +43,27 @@ export function createFakeBackend(options: FakeOptions = {}) {
       user = { id: 'user-2', email, fullName };
       emit();
       return { needsEmailConfirmation: false };
+    },
+    async signInWithGoogle() {
+      calls.push('google');
+    },
+    async sendSignInCode(email) {
+      calls.push(`sendCode:${email}`);
+      sentCodes.set(email.trim(), '123456');
+    },
+    async verifySignInCode(email, code) {
+      calls.push(`verifyCode:${email}`);
+      if (sentCodes.get(email.trim()) !== code.replace(/\s/g, '')) {
+        throw new UserFacingError('That code is wrong or has expired. Check the latest email, or send a new code.', 'otp_expired');
+      }
+      user = { id: 'user-3', email: email.trim(), fullName: '' };
+      emit();
+    },
+    async finishRedirectSignIn(url) {
+      calls.push(`finish:${url}`);
+      if (url.includes('error=access_denied')) throw new UserFacingError('Sign-in was cancelled.', 'redirect_error');
+      user = { id: 'user-4', email: 'google@alpha.test', fullName: 'Google User' };
+      emit();
     },
     async requestPasswordReset(email) {
       calls.push(`reset:${email}`);

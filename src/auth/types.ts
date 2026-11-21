@@ -54,6 +54,16 @@ export interface AuthBackend {
   onChange(callback: (user: AuthUser | null) => void): () => void;
   signIn(email: string, password: string): Promise<void>;
   signUp(email: string, password: string, fullName: string): Promise<{ needsEmailConfirmation: boolean }>;
+  /**
+   * Starts Google sign-in. On the web the page leaves for Google and comes back
+   * to /auth/callback; in the Android app Google opens in the phone's browser.
+   */
+  signInWithGoogle(): Promise<void>;
+  /** Emails a one-time sign-in code (and link). Creates the account on first use. */
+  sendSignInCode(email: string, fullName?: string): Promise<void>;
+  verifySignInCode(email: string, code: string): Promise<void>;
+  /** Completes a sign-in that returned from the browser (Google or an emailed link). */
+  finishRedirectSignIn(url: string): Promise<void>;
   requestPasswordReset(email: string): Promise<void>;
   updatePassword(password: string): Promise<void>;
   signOut(): Promise<void>;

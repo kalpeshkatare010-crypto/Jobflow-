@@ -5,6 +5,8 @@ import { NAV_ITEMS } from './layout/nav';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { ModulePage, NotFoundPage } from '../features/modules/ModulePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
+import { AuthCallbackPage, CodeSignInPage } from '../auth/signInExtras';
+import { HelpPage } from '../features/help/HelpPage';
 import { CustomersPage } from '../features/customers/CustomersPage';
 import { JobsPage } from '../features/jobs/JobsPage';
 import { EmployeesPage } from '../features/employees/EmployeesPage';
@@ -80,6 +82,8 @@ export function AppRoutes() {
     <Routes>
       <Route path="sign-in" element={<SignInPage />} />
       <Route path="sign-up" element={<SignUpPage />} />
+      <Route path="sign-in/code" element={<CodeSignInPage />} />
+      <Route path="auth/callback" element={<AuthCallbackPage />} />
       <Route path="forgot-password" element={<ForgotPasswordPage />} />
       <Route path="reset-password" element={<ResetPasswordPage />} />
       <Route path="invite/:token" element={<InvitePage />} />
@@ -92,7 +96,8 @@ export function AppRoutes() {
         <Route path="jobs/*" element={<JobsPage />} />
         <Route path="employees/*" element={<EmployeesPage />} />
         <Route path="workflows/*" element={<WorkflowsPage />} />
-        {NAV_ITEMS.filter((item) => !['/', '/settings', '/customers', '/jobs', '/employees', '/workflows'].includes(item.path)).map((item) => (
+        <Route path="help/*" element={<HelpPage />} />
+        {NAV_ITEMS.filter((item) => !['/', '/settings', '/customers', '/jobs', '/employees', '/workflows', '/help'].includes(item.path)).map((item) => (
           <Route key={item.path} path={`${item.path.slice(1)}/*`} element={<ModulePage />} />
         ))}
         <Route path="*" element={<NotFoundPage />} />

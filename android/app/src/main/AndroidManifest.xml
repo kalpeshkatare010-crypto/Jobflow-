@@ -30,6 +30,14 @@
                 <data android:scheme="@string/custom_url_scheme" android:host="open" />
             </intent-filter>
 
+            <!-- Return from Google sign-in or an emailed sign-in link: com.rkdigitals.jobflow://auth/callback -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/custom_url_scheme" android:host="auth" android:pathPrefix="/callback" />
+            </intent-filter>
+
         </activity>
 
         <receiver

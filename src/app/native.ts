@@ -5,8 +5,14 @@ export function isNativeApp(): boolean {
   return Capacitor.isNativePlatform();
 }
 
-/** Turns a widget link (com.rkdigitals.jobflow://open/customers?new=1) into an app path (/customers?new=1). */
+/**
+ * Turns an app link into an app path:
+ * - widget links: com.rkdigitals.jobflow://open/customers?new=1 becomes /customers?new=1
+ * - sign-in returns: com.rkdigitals.jobflow://auth/callback?code=… becomes /auth/callback?code=…
+ */
 export function pathFromAppLink(url: string): string | null {
+  const auth = /^com\.rkdigitals\.jobflow:\/\/auth\/callback([?#].*)?$/.exec(url.trim());
+  if (auth) return `/auth/callback${auth[1] ?? ''}`;
   const match = /^com\.rkdigitals\.jobflow:\/\/open(\/[^#]*)?$/.exec(url.trim());
   if (!match) return null;
   const path = match[1] || '/';
@@ -33,7 +39,12 @@ export async function setUpNativeApp(): Promise<void> {
   });
   await App.addListener('appUrlOpen', ({ url }) => {
     const path = pathFromAppLink(url);
-    if (path) goTo(path);
+    if (!path) return;
+    if (path.startsWith('/auth/callback')) {
+      // Back from Google or an emailed link: close the browser sheet first.
+      void import('@capacitor/browser').then(({ Browser }) => Browser.close()).catch(() => undefined);
+    }
+    goTo(path);
   });
   const launch = await App.getLaunchUrl();
   const path = launch?.url ? pathFromAppLink(launch.url) : null;

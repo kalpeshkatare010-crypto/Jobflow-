@@ -5,6 +5,7 @@ import { Button, buttonStyles, Input } from '../components/ui';
 import { AuthLayout, FormError, safeNext } from './AuthLayout';
 import { useAuth } from './AuthProvider';
 import { messageOf, ROLE_LABEL } from './types';
+import { GoogleSignIn } from './signInExtras';
 
 const MIN_PASSWORD = 8;
 const linkClass = 'font-medium text-info hover:underline';
@@ -58,7 +59,8 @@ export function SignInPage() {
         </>
       }
     >
-      <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
+      <GoogleSignIn next={next} />
+      <form className="mt-4 flex flex-col gap-4" onSubmit={submit} noValidate>
         <FormError message={error} />
         <Input label="Email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         <Input
@@ -72,6 +74,9 @@ export function SignInPage() {
         <Button type="submit" loading={busy} disabled={!email || !password}>
           Sign in
         </Button>
+        <Link className={`${linkClass} text-center text-[13px]`} to={withNext('/sign-in/code', next)}>
+          Email me a sign-in code instead
+        </Link>
         <Link className={`${linkClass} text-center text-[13px]`} to="/forgot-password">
           Forgot your password?
         </Link>
@@ -139,7 +144,8 @@ export function SignUpPage() {
         </>
       }
     >
-      <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
+      <GoogleSignIn next={next} label="Sign up with Google" />
+      <form className="mt-4 flex flex-col gap-4" onSubmit={submit} noValidate>
         <FormError message={error} />
         <Input label="Your name" autoComplete="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
         <Input label="Work email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
