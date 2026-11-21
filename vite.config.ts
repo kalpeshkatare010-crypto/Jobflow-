@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -8,6 +9,17 @@ import pkg from './package.json' with { type: 'json' };
 // `--mode preview` builds a self-contained copy with relative asset paths and
 // hash-based routing, so it can be opened from any folder or preview host.
 // The normal build (Cloudflare Pages) uses absolute paths and clean URLs.
+/** " (a1b2c3d, 21 Nov)": which commit and day this copy was built from, so support can tell versions apart. */
+function buildStamp(): string {
+  try {
+    const sha = (process.env.GITHUB_SHA ?? process.env.WORKERS_CI_COMMIT_SHA ?? execSync('git rev-parse HEAD').toString()).trim().slice(0, 7);
+    const day = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+    return sha ? ` (${sha}, ${day})` : '';
+  } catch {
+    return '';
+  }
+}
+
 export default defineConfig(({ mode }) => ({
   base: mode === 'preview' ? './' : '/',
   plugins: [
@@ -50,7 +62,7 @@ export default defineConfig(({ mode }) => ({
         }),
   ],
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_VERSION__: JSON.stringify(`${pkg.version}${buildStamp()}`),
   },
   test: {
     environment: 'jsdom',
