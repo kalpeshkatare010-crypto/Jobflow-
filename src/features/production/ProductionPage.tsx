@@ -171,7 +171,7 @@ export function ProductionPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="metric-group grid grid-cols-1 sm:grid-cols-3">
         <MetricCard wash="mint" label="Good" value={formatNumber(summary.good)} icon={<CircleCheck className="size-4" />} note="All stages, this period" />
         <MetricCard wash="rose" label="Rejected" value={formatNumber(summary.rejected)} icon={<CircleX className="size-4" />} note="All stages, this period" />
         <MetricCard

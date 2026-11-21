@@ -25,9 +25,12 @@ function NavList({ collapsed, onNavigate }: NavListProps) {
               title={collapsed ? item.label : undefined}
               className={({ isActive }) =>
                 cn(
-                  'press flex h-10 items-center gap-3 rounded-[var(--radius-control)] text-sm font-medium duration-200',
+                  'press relative flex h-9 items-center gap-3 rounded-[var(--radius-control)] text-[14px] duration-200',
                   collapsed ? 'justify-center px-0' : 'px-3',
-                  isActive ? 'bg-signal text-on-signal' : 'text-ink-700 hover:bg-ink-900/5 hover:text-ink-900',
+                  // Where you are: a quiet raised row with a thin signal-yellow marker.
+                  isActive
+                    ? "bg-surface font-medium text-ink-900 ring-1 ring-line before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-signal before:content-['']"
+                    : 'text-ink-500 hover:bg-ink-900/5 hover:text-ink-900',
                 )
               }
             >

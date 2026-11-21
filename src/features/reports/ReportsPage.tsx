@@ -131,7 +131,7 @@ export function ReportsPage() {
         <>
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {report.totals.map((t) => (
-              <div key={t.label} className="min-w-0 rounded-[var(--radius-card)] bg-surface p-4">
+              <div key={t.label} className="min-w-0 rounded-[var(--radius-card)] border border-line bg-surface p-4">
                 <dt className="text-[12px] text-ink-500">{t.label}</dt>
                 <dd
                   className={cn(

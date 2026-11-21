@@ -6,9 +6,9 @@ import { readdirSync, existsSync } from 'node:fs';
 
 const exe = process.argv[2] ?? '/usr/bin/google-chrome';
 const RES = 'android/app/src/main/res';
-const NAVY = '#14213D';
+const NAVY = '#171717';
 const YELLOW = '#F2D24B';
-const CANVAS = '#EEF0F3';
+const CANVAS = '#F5F5F4';
 
 /** The three stepped bars, centred, `scale` = share of the shorter side. */
 function bars(width, height, scale) {

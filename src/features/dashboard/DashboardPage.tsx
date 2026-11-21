@@ -50,14 +50,16 @@ import {
 // Recharts is large, so the chart loads in its own file after the page appears.
 const ProductionChart = lazy(() => import('./ProductionChart').then((m) => ({ default: m.ProductionChart })));
 
+// One neutral colour: each row is labelled, so colour would only repeat the label.
+// In production keeps the signal yellow, as everywhere else for "where the work is".
 const STATUS_BAR: Record<string, string> = {
-  draft: 'bg-ink-200',
-  approved: 'bg-info',
+  draft: 'bg-ink-400',
+  approved: 'bg-ink-700',
   in_production: 'bg-signal',
-  on_hold: 'bg-warning',
-  completed: 'bg-good',
-  delivered: 'bg-good/60',
-  cancelled: 'bg-critical',
+  on_hold: 'bg-ink-700',
+  completed: 'bg-ink-700',
+  delivered: 'bg-ink-700',
+  cancelled: 'bg-ink-400',
 };
 
 /** First steps for a new business, ticked off as they are done. */
@@ -315,7 +317,7 @@ export function DashboardPage() {
         <GetStarted workflows={workflowCount ?? 0} customers={customerCount ?? 0} />
       ) : null}
 
-      <section aria-label="Key figures" className="stagger mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      <section aria-label="Key figures" className="metric-group mb-5 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
         <MetricCard wash="lilac" label="Job orders" value={formatNumber(metrics.total)} icon={<ClipboardList className="size-4" />} note="Excluding cancelled" />
         <MetricCard wash="sand" label="Pending" value={formatNumber(metrics.pending)} icon={<Clock3 className="size-4" />} note="Draft, approved or on hold" />
         <MetricCard wash="aqua" label="In production" value={formatNumber(metrics.inProduction)} icon={<Factory className="size-4" />} note="On the floor now" />

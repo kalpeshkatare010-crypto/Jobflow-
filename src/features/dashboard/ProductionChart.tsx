@@ -13,8 +13,8 @@ export interface WeeklyOutput {
 // Hex values, not CSS variables: SVG fill attributes do not resolve var().
 // Keep in sync with --color-series-1/2 in styles/index.css (both themes validated).
 const PALETTE = {
-  light: { good: '#3b5bdb', rejected: '#c2621a', grid: '#e3e6eb', tick: '#646d82', surface: '#ffffff' },
-  dark: { good: '#6a8bf0', rejected: '#cf7433', grid: '#26324a', tick: '#8e98ad', surface: '#172033' },
+  light: { good: '#3b5bdb', rejected: '#c2621a', grid: '#e7e7e5', tick: '#6b6b6b', surface: '#ffffff' },
+  dark: { good: '#6a8bf0', rejected: '#d27a3a', grid: '#222222', tick: '#8c8c8c', surface: '#111111' },
 };
 
 const SERIES = [

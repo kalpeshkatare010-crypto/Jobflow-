@@ -6,7 +6,7 @@ export type ThemeChoice = 'system' | 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';
 
 const KEY = 'theme';
-const CANVAS: Record<ResolvedTheme, string> = { light: '#EEF0F3', dark: '#0F1524' };
+const CANVAS: Record<ResolvedTheme, string> = { light: '#F5F5F4', dark: '#000000' };
 
 interface ThemeValue {
   choice: ThemeChoice;

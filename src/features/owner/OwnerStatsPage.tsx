@@ -71,7 +71,7 @@ export function OwnerStatsPage() {
 
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tiles.map((t) => (
-          <div key={t.label} className="min-w-0 rounded-[var(--radius-card)] bg-surface p-4">
+          <div key={t.label} className="min-w-0 rounded-[var(--radius-card)] border border-line bg-surface p-4">
             <dt className="text-[12px] text-ink-500">{t.label}</dt>
             <dd className="tabular mt-1 text-[22px] font-semibold">{t.value}</dd>
             {t.note ? <dd className="text-[12px] text-ink-500">{t.note}</dd> : null}

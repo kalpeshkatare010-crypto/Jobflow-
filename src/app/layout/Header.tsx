@@ -33,16 +33,16 @@ export function Header({
       <button
         type="button"
         onClick={onOpenMenu}
-        className="grid size-10 place-items-center rounded-full bg-surface text-ink-900 lg:hidden"
+        className="grid size-10 place-items-center rounded-[var(--radius-control)] border border-line bg-surface text-ink-900 lg:hidden"
       >
         <Menu aria-hidden className="size-5" />
         <span className="sr-only">Open menu</span>
       </button>
       <div className="min-w-0 flex-1">
-        <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.02em] text-ink-900 sm:text-[26px]">{title}</h1>
+        <h1 className="text-[19px] leading-tight font-semibold tracking-[-0.015em] text-ink-900 sm:text-[22px]">{title}</h1>
         {subtitle ? <p className="mt-0.5 text-sm text-ink-500">{subtitle}</p> : null}
       </div>
-      <div className="flex items-center gap-2 rounded-full bg-surface p-1.5">
+      <div className="flex items-center gap-1.5">
         <SyncIndicator state={sync} onRetry={onRetrySync} />
         <UserMenu
           userName={userName}

@@ -4,7 +4,7 @@
 import { chromium } from 'playwright-core';
 
 const exe = process.argv[2] ?? '/usr/bin/google-chrome';
-const NAVY = '#14213D';
+const NAVY = '#171717';
 const YELLOW = '#F2D24B';
 
 // scale: share of the canvas the bars occupy; rounded: corner radius share.
