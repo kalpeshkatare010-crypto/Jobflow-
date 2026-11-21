@@ -27,6 +27,7 @@ import { cn } from '../../lib/cn';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useLocalData } from '../../offline/LocalDataProvider';
 import { toSummary, UNNUMBERED, useJobViews } from '../jobs/jobData';
+import { weeklyOutput } from '../../domain/production';
 import { JOB_STATUS_LABEL as STATUS_TEXT } from '../../components/ui';
 import { useAuth } from '../../auth/AuthProvider';
 import { describeDue, formatNumber, formatPercent, formatRelativeTime, formatShortDate, daysUntil } from '../../lib/format';
@@ -197,7 +198,13 @@ export function DashboardPage() {
   const demo = realJobs === null;
   const demoJobs = useMemo(() => buildDemoJobs(today), [today]);
   const jobs = realJobs ?? demoJobs;
-  const weekly = useMemo(() => buildDemoWeeklyOutput(today), [today]);
+  const realWeekly = useMemo(() => {
+    if (!views || views.length === 0) return null;
+    const outputStages = new Set(views.flatMap((v) => v.stages.filter((st) => st.counts_output).map((st) => st.id)));
+    return weeklyOutput(views.flatMap((v) => v.entries), outputStages, today);
+  }, [views, today]);
+  const weekly = useMemo(() => realWeekly ?? buildDemoWeeklyOutput(today), [realWeekly, today]);
+  const hasOutput = (realWeekly ?? []).some((w) => w.good > 0 || w.rejected > 0);
   const metrics = computeJobMetrics(jobs, today);
   const tag = demo ? <DemoTag /> : undefined;
 
@@ -229,9 +236,8 @@ export function DashboardPage() {
           <span className="text-[13px]">
             {current ? current.name : done === job.stages.length ? 'All stages done' : 'Not started'}
             <span className="block text-[12px] text-ink-500">
-              {demo
-                ? `${formatNumber(job.producedQty)} of ${formatNumber(job.quantity)} ${job.unit} finished`
-                : `${done} of ${job.stages.length} stages done`}
+              {`${formatNumber(job.producedQty)} of ${formatNumber(job.quantity)} ${job.unit} finished`}
+              {demo ? null : ` (${done} of ${job.stages.length} stages done)`}
             </span>
           </span>
         );
@@ -264,11 +270,15 @@ export function DashboardPage() {
       </section>
 
       <div className="stagger grid grid-cols-1 gap-5 xl:grid-cols-12" style={{ '--stagger-base': '180ms' } as CSSProperties}>
-        {demo ? (
+        {demo || hasOutput ? (
           <Card className="xl:col-span-8">
             <CardHeader
               title="Production overview"
-              description={`Last 8 weeks, all stages. Rejection rate this week: ${formatPercent(weekRejection)}`}
+              description={
+                demo
+                  ? `Last 8 weeks, all stages. Rejection rate this week: ${formatPercent(weekRejection)}`
+                  : `Finished output and rejections, last 8 weeks. Rejection rate this week: ${formatPercent(weekRejection)}`
+              }
               action={tag}
             />
             <Suspense fallback={<Skeleton className="h-[268px] w-full" />}>
@@ -279,13 +289,13 @@ export function DashboardPage() {
           <div className="xl:col-span-8">
             <ComingSoon
               title="Production overview"
-              text="Weekly good and rejected output will show here once production entries are added in the next update."
+              text="No production recorded in the last 8 weeks. Use Record on a job's stage, or the Production screen, and the weekly chart appears here."
             />
           </div>
         )}
 
         <Card className="xl:col-span-4">
-          <CardHeader title="Jobs by status" description={`${jobs.length} job orders`} action={tag} />
+          <CardHeader title="Jobs by status" description={`${jobs.length} job order${jobs.length === 1 ? "" : "s"}`} action={tag} />
           <StatusBreakdown jobs={jobs} />
         </Card>
 

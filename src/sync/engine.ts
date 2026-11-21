@@ -286,6 +286,12 @@ export class SyncEngine {
       });
     }
 
+    if (result.status === 'conflict' && !result.row) {
+      // The server could not apply a new record (for example production on a cancelled job):
+      // keep it on this device, marked, so the person sees what was not recorded.
+      const local = await localTable(this.db, table).get(entry.entityId);
+      if (local) await localTable(this.db, table).put({ ...local, _sync: 'conflict', _message: result.message });
+    }
     if (result.row) await rebaseRow(this.db, table, result.row as Record<string, unknown> & { id: string });
     for (const [child, rows] of Object.entries(result.related ?? {})) {
       for (const row of rows ?? []) await rebaseRow(this.db, child as ServerTable, row as Record<string, unknown> & { id: string });

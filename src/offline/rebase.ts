@@ -13,6 +13,7 @@ export const SERVER_TABLES = [
   'job_orders',
   'job_stages',
   'job_events',
+  'production_entries',
 ] as const;
 export type ServerTable = (typeof SERVER_TABLES)[number];
 
@@ -25,6 +26,7 @@ export function localTable(db: JobFlowDB, table: ServerTable): Table<Record<stri
     job_orders: db.jobOrders,
     job_stages: db.jobStages,
     job_events: db.jobEvents,
+    production_entries: db.productionEntries,
   } as const;
   return map[table] as unknown as Table<Record<string, unknown>, string>;
 }
@@ -34,6 +36,7 @@ export function tableForMutation(type: MutationType): ServerTable {
   if (type.startsWith('customer.')) return 'customers';
   if (type.startsWith('employee.')) return 'employees';
   if (type.startsWith('workflow.')) return 'workflows';
+  if (type.startsWith('production.')) return 'production_entries';
   return 'job_orders';
 }
 
@@ -62,6 +65,10 @@ export function applyPending(table: ServerTable, row: Row, pending: OutboxEntry[
       local.description = entry.payload.description ?? local.description;
     }
     if (entry.type === 'job.transition' && entry.payload.to) local.status = entry.payload.to;
+    if (entry.type === 'production.void') {
+      local.voided_at = local.voided_at ?? entry.createdAt;
+      local.void_reason = local.void_reason ?? entry.payload.reason ?? null;
+    }
     if (entry.type === 'job.stage' && local.status === 'approved') local.status = 'in_production';
   }
   return local;

@@ -12,7 +12,9 @@ import { ValidationError } from '../../offline/customers';
 import { STAGE_ACTIONS, STAGE_ACTION_LABEL, statusActions, type StatusAction } from '../../domain/jobStatus';
 import { describeDue, formatQuantity, formatRelativeTime } from '../../lib/format';
 import { cn } from '../../lib/cn';
-import { localDate, PRIORITY_LABEL, useJobEvents, type JobView } from './jobData';
+import { localDate, PRIORITY_LABEL, stageTotals, toSummary, useJobEvents, type JobView } from './jobData';
+import { useNavigate } from 'react-router';
+import { formatNumber } from '../../lib/format';
 
 const STAGE_STATUS_LABEL: Record<JobStageRecord['status'], string> = {
   not_started: 'Not started',
@@ -57,6 +59,10 @@ export function JobDetail({ view, canManage, onEdit }: { view: JobView; canManag
   const [error, setError] = useState<string | null>(null);
 
   const stagesOpen = job.status === 'approved' || job.status === 'in_production';
+  const canRecord = stagesOpen || job.status === 'on_hold';
+  const navigate = useNavigate();
+  const perStage = stageTotals(view);
+  const summary = toSummary(view);
   const due = localDate(job.due_date);
 
   async function run(fn: () => Promise<void>) {
@@ -113,6 +119,8 @@ export function JobDetail({ view, canManage, onEdit }: { view: JobView; canManag
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]">
           <Fact label="Customer" value={customer?.name ?? 'Unknown customer'} />
           <Fact label="Quantity" value={formatQuantity(job.quantity, job.unit)} />
+          <Fact label="Finished output" value={`${formatNumber(summary.producedQty)} of ${formatQuantity(job.quantity, job.unit)}`} />
+          <Fact label="Rejected" value={formatQuantity(summary.rejectedQty, job.unit)} />
           <Fact label="Due" value={due ? describeDue(due) : 'No due date'} />
           <Fact label="Ordered" value={localDate(job.order_date)?.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) ?? '-'} />
         </dl>
@@ -140,11 +148,22 @@ export function JobDetail({ view, canManage, onEdit }: { view: JobView; canManag
               <span className={cn('min-w-0 flex-1 text-[13px] font-medium', stage.status === 'skipped' && 'text-ink-400 line-through')}>
                 {stage.name}
                 {stage.counts_output ? <span className="ml-1.5 text-[11px] font-normal text-ink-500">(counts output)</span> : null}
+                <StageNumbers totals={perStage.get(stage.id)} />
               </span>
               <Badge tone={STAGE_TONE[stage.status]}>{STAGE_STATUS_LABEL[stage.status]}</Badge>
-              {stagesOpen ? (
+              {stagesOpen || canRecord ? (
                 <span className="flex w-full justify-end gap-1 sm:w-auto">
-                  {STAGE_ACTIONS[stage.status].map((action) => (
+                  {canRecord && stage.status !== 'skipped' ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => navigate(`/production?job=${job.id}&stage=${stage.id}`)}
+                      aria-label={`Record production for ${stage.name}`}
+                    >
+                      Record
+                    </Button>
+                  ) : null}
+                  {(stagesOpen ? STAGE_ACTIONS[stage.status] : []).map((action) => (
                     <Button
                       key={action}
                       size="sm"
@@ -219,6 +238,16 @@ export function JobDetail({ view, canManage, onEdit }: { view: JobView; canManag
         </ul>
       </section>
     </div>
+  );
+}
+
+function StageNumbers({ totals }: { totals: { good: number; rejected: number } | undefined }) {
+  if (!totals || (totals.good === 0 && totals.rejected === 0)) return null;
+  return (
+    <span className="block text-[12px] font-normal text-ink-500">
+      {formatNumber(totals.good)} good
+      {totals.rejected > 0 ? <span className="text-critical">, {formatNumber(totals.rejected)} rejected</span> : null}
+    </span>
   );
 }
 

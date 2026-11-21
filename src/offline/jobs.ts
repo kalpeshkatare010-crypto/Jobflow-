@@ -173,7 +173,7 @@ export async function updateJob(db: JobFlowDB, id: string, input: JobEditInput):
   });
 }
 
-async function localEvent(db: JobFlowDB, job: JobRecord, event: Partial<{ kind: 'status' | 'stage'; from: string; to: string; stage: string; action: string; reason: string | null }>) {
+export async function localEvent(db: JobFlowDB, job: JobRecord, event: Partial<{ kind: 'status' | 'stage'; from: string; to: string; stage: string; action: string; reason: string | null }>) {
   await db.jobEvents.add({
     id: newId(),
     tenant_id: job.tenant_id,

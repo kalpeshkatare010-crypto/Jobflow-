@@ -52,7 +52,7 @@ export function StageTrack({ stages, className }: StageTrackProps) {
         {current ? (
           <>
             <span className="font-medium text-ink-900">{current.name}</span>
-            <span> - stage {doneCount + 1} of {stages.length}</span>
+            <span> - stage {stages.indexOf(current) + 1} of {stages.length}</span>
           </>
         ) : doneCount === stages.length ? (
           <span>All {stages.length} stages done</span>

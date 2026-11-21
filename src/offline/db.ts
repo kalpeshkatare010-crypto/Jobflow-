@@ -47,7 +47,9 @@ export type MutationType =
   | 'job.create'
   | 'job.update'
   | 'job.transition'
-  | 'job.stage';
+  | 'job.stage'
+  | 'production.record'
+  | 'production.void';
 
 /** Common shape of every synced row kept on the device. */
 export interface SyncedRow {
@@ -131,6 +133,25 @@ export interface JobEventRecord {
   _local?: boolean;
 }
 
+/** Good and rejected quantity for one stage of one job on one day. Never edited; voided with a reason. */
+export interface ProductionEntryRecord extends SyncedRow {
+  job_id: string;
+  job_stage_id: string;
+  employee_id: string | null;
+  /** YYYY-MM-DD */
+  entry_date: string;
+  good_qty: number;
+  rejected_qty: number;
+  rejection_reason: string | null;
+  notes: string | null;
+  recorded_by_name: string | null;
+  voided_at: string | null;
+  void_reason: string | null;
+  voided_by_name: string | null;
+  /** The server's explanation when it refused or could not record the entry. */
+  _message?: string;
+}
+
 export interface OutboxEntry {
   seq?: number;
   mutationId: string;
@@ -151,6 +172,13 @@ export interface OutboxEntry {
     /** job.stage */
     stageId?: string;
     action?: 'start' | 'complete' | 'skip' | 'reopen';
+    /** production.record */
+    jobId?: string;
+    employeeId?: string | null;
+    date?: string;
+    good?: number;
+    rejected?: number;
+    notes?: string | null;
   };
   createdAt: string;
   attempts: number;
@@ -178,7 +206,7 @@ export interface ConflictRecord {
 
 /** Every local table a sync transaction may touch. */
 export function allTables(db: JobFlowDB) {
-  return [db.customers, db.employees, db.workflows, db.workflowStages, db.jobOrders, db.jobStages, db.jobEvents, db.outbox, db.conflicts, db.meta];
+  return [db.customers, db.employees, db.workflows, db.workflowStages, db.jobOrders, db.jobStages, db.jobEvents, db.productionEntries, db.outbox, db.conflicts, db.meta];
 }
 
 export interface MetaRecord {
@@ -197,6 +225,7 @@ export class JobFlowDB extends Dexie {
   jobOrders!: Table<JobRecord, string>;
   jobStages!: Table<JobStageRecord, string>;
   jobEvents!: Table<JobEventRecord, string>;
+  productionEntries!: Table<ProductionEntryRecord, string>;
 
   constructor(name: string) {
     super(name);
@@ -214,6 +243,9 @@ export class JobFlowDB extends Dexie {
       jobOrders: 'id, status, due_date, customer_id, _sync',
       jobStages: 'id, job_id',
       jobEvents: 'id, job_id, created_at',
+    });
+    this.version(3).stores({
+      productionEntries: 'id, job_id, job_stage_id, entry_date, _sync',
     });
   }
 }
