@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router';
 import { ErrorBoundary } from '../ErrorBoundary';
+import { SubscriptionBanner } from '../../features/billing/PlanSection';
 import { readPreference, writePreference } from '../../lib/storage';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -88,6 +89,7 @@ function Shell() {
         <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
           <div key={location.pathname} className="animate-page-in">
             <ErrorBoundary key={location.pathname}>
+              <SubscriptionBanner />
               <Outlet />
             </ErrorBoundary>
           </div>

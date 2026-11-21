@@ -3,8 +3,9 @@ import { ThemePicker } from '../../app/ThemePicker';
 import { TeamSection } from '../team/TeamSection';
 import { useAuth } from '../../auth/AuthProvider';
 import { Settings } from 'lucide-react';
+import { PlanSection } from '../billing/PlanSection';
 
-/** Settings grows section by section; Team (users, roles, invitations) is first. */
+/** Appearance, team (users, roles, invitations), and plan and billing. */
 export function SettingsPage() {
   const { status } = useAuth();
   return (
@@ -24,9 +25,7 @@ export function SettingsPage() {
       ) : (
         <TeamSection />
       )}
-      <p className="text-[13px] text-ink-500">
-        Business profile, job numbering, units and billing arrive in coming updates.
-      </p>
+      <PlanSection />
     </div>
   );
 }
