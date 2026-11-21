@@ -99,6 +99,7 @@ Without them, Help & Support still works and lets people copy their problem deta
 
 ## Good to know
 
+- **Backups:** switch on the free nightly encrypted backup: [docs/BACKUP.md](BACKUP.md). Do this before real data goes in.
 - **Email limits:** Supabase's built-in email sends only a few messages per hour. That is enough for testing. Before customers sign up, a proper email service is needed; it will be proposed with its cost for your approval.
 - **Free project pause:** a free Supabase project pauses after a week without use. Open the app now and then while testing. Before the first paying customer, the paid plan (about US$25/month) is needed; that also needs your approval.
 - **Running locally (computer only):** copy `.env.example` to `.env.local`, fill in the two `VITE_` values, then `npm install` and `npm run dev`.

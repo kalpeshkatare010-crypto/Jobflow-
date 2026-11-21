@@ -1,0 +1,93 @@
+name: Back up database
+
+# Daily encrypted backup of the Supabase database (decision C-07: the free
+# Supabase plan has no automatic backups). Follows Supabase's own CLI backup
+# method: roles, schema and data as three SQL files.
+#
+# The files are encrypted with BACKUP_PASSPHRASE (AES-256) before they leave
+# the runner, then kept as a workflow artifact for 30 days. This repository is
+# public, so anyone signed in to GitHub could download the artifact, but
+# without the passphrase it is unreadable. Keep the passphrase long, and also
+# in a safe place outside GitHub: without it the backups cannot be restored.
+#
+# Needs the same secrets as "Deploy database", plus:
+#   BACKUP_PASSPHRASE  - a long random passphrase (at least 20 characters)
+# If any is missing, the job stops with a message and does nothing.
+# Restoring: docs/BACKUP.md
+
+on:
+  schedule:
+    - cron: '17 21 * * *' # every day at 02:47 India time
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-db
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check settings
+        id: settings
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$SUPABASE_PROJECT_REF" ] || [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "Supabase secrets are not set yet; no backup was made. See docs/SETUP.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ "${#BACKUP_PASSPHRASE}" -lt 20 ]; then
+            echo "BACKUP_PASSPHRASE is missing or shorter than 20 characters; no backup was made. See docs/BACKUP.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.settings.outputs.ready == 'true'
+
+      - uses: supabase/setup-cli@v1
+        if: steps.settings.outputs.ready == 'true'
+        with:
+          version: latest
+
+      - name: Dump roles, schema and data
+        if: steps.settings.outputs.ready == 'true'
+        run: |
+          mkdir -p backup
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db dump --linked --password "$SUPABASE_DB_PASSWORD" --role-only -f backup/roles.sql
+          supabase db dump --linked --password "$SUPABASE_DB_PASSWORD" -f backup/schema.sql
+          supabase db dump --linked --password "$SUPABASE_DB_PASSWORD" --data-only --use-copy -f backup/data.sql
+          for f in roles schema data; do
+            test -s "backup/$f.sql" || { echo "backup/$f.sql is empty; stopping."; exit 1; }
+          done
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > backup/created-at.txt
+          ls -l backup
+
+      - name: Encrypt and check it can be decrypted
+        if: steps.settings.outputs.ready == 'true'
+        run: |
+          name="jobflow-backup-$(date -u +%Y-%m-%d)"
+          tar -czf "$name.tar.gz" backup
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 --output "$name.tar.gz.gpg" "$name.tar.gz"
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
+            --decrypt "$name.tar.gz.gpg" | tar -tz > /dev/null
+          rm -rf backup "$name.tar.gz"
+          echo "NAME=$name" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.settings.outputs.ready == 'true'
+        with:
+          name: ${{ env.NAME }}
+          path: ${{ env.NAME }}.tar.gz.gpg
+          retention-days: 30
+          if-no-files-found: error

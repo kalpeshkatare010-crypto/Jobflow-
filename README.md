@@ -19,8 +19,9 @@ JobFlow helps small manufacturers (5–30 people) manage job orders and track pr
 | 7 | Production entries: good and rejected quantities per stage, offline, void with reason; dashboard chart from real output | Done |
 | 8 | Inventory: materials, receive/issue/adjust ledger, low-stock and below-zero warnings, offline | Done |
 | 9 | Reports: jobs, production, rejections, stock; CSV download or share | Done |
-| 10 | Hardening: backups, security review, error handling | Next |
-| 11–12 | Billing (needs your approval for a payment provider), launch | Planned |
+| 10 | Hardening: nightly encrypted backups (docs/BACKUP.md), security headers, crash recovery, database-wide security checks | Done |
+| 11 | Plans and billing screen (₹299 / ₹599); live payments need your approval of a payment provider | Next |
+| 12 | Launch checklist | Planned |
 
 Without Supabase settings the app runs in **demo mode**: no sign-in, invented sample data marked "Demo data", and the header says "Not connected". With settings (see [docs/SETUP.md](docs/SETUP.md)) it requires sign-in, business setup and team invitations. The dashboard shows sample figures only until the business creates its first job order; after that every figure is real.
 

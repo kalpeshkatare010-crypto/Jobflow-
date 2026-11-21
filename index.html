@@ -10,16 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="JobFlow" />
     <title>JobFlow</title>
-    <script>
-      // Apply the saved theme before the page draws, so dark mode never flashes white.
-      (function () {
-        try {
-          var saved = JSON.parse(localStorage.getItem('jobflow:theme') || '"system"');
-          var dark = saved === 'dark' || (saved === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-        } catch (e) {}
-      })();
-    </script>
+    <script src="%BASE_URL%theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

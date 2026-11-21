@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { readPreference, writePreference } from '../../lib/storage';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -86,7 +87,9 @@ function Shell() {
         />
         <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
           <div key={location.pathname} className="animate-page-in">
-            <Outlet />
+            <ErrorBoundary key={location.pathname}>
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </main>
         <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 text-[12px] text-ink-500">
