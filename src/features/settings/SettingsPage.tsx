@@ -4,6 +4,8 @@ import { TeamSection } from '../team/TeamSection';
 import { useAuth } from '../../auth/AuthProvider';
 import { Settings } from 'lucide-react';
 import { PlanSection } from '../billing/PlanSection';
+import { RemindersSection } from '../../notifications/RemindersSection';
+import { AppUpdateSection } from '../../app/UpdateViews';
 
 /** Appearance, team (users, roles, invitations), and plan and billing. */
 export function SettingsPage() {
@@ -25,6 +27,8 @@ export function SettingsPage() {
       ) : (
         <TeamSection />
       )}
+      <AppUpdateSection />
+      <RemindersSection />
       <PlanSection />
     </div>
   );

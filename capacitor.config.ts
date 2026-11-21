@@ -7,11 +7,15 @@ const config: CapacitorConfig = {
   appName: 'JobFlow',
   webDir: 'dist',
   android: {
-    backgroundColor: '#EEF0F3',
+    backgroundColor: '#F5F5F4',
   },
   plugins: {
+    LocalNotifications: {
+      smallIcon: 'ic_stat_jobflow',
+      iconColor: '#F2D24B',
+    },
     StatusBar: {
-      backgroundColor: '#EEF0F3',
+      backgroundColor: '#F5F5F4',
       style: 'LIGHT',
       overlaysWebView: false,
     },

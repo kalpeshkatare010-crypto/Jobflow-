@@ -19,7 +19,8 @@ export function pathFromAppLink(url: string): string | null {
   return path.startsWith('//') ? '/' : path;
 }
 
-function goTo(path: string) {
+/** Opens a screen from outside React (widgets, links, notifications). */
+export function goTo(path: string) {
   window.history.pushState({}, '', path);
   // React Router listens for popstate and shows the new screen.
   window.dispatchEvent(new PopStateEvent('popstate'));

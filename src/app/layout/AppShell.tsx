@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router';
 import { ErrorBoundary } from '../ErrorBoundary';
+import { useReminders } from '../../notifications/useReminders';
+import { UpdateBanner } from '../UpdateViews';
 import { SubscriptionBanner } from '../../features/billing/PlanSection';
 import { readPreference, writePreference } from '../../lib/storage';
 import { Sidebar } from './Sidebar';
@@ -43,6 +45,7 @@ function Shell() {
   const auth = useAuth();
   const local = useLocalData();
   useHomeScreenWidgets();
+  useReminders();
   const isDemo = auth.status === 'demo';
   const userName = isDemo ? DEMO_SESSION.userName : auth.user?.fullName || auth.user?.email || 'Signed in';
   const businessName = isDemo ? DEMO_SESSION.businessName : (auth.activeWorkspace?.name ?? '');
@@ -97,6 +100,7 @@ function Shell() {
         <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
           <div key={location.pathname} className="animate-page-in">
             <ErrorBoundary key={location.pathname}>
+              <UpdateBanner />
               <SubscriptionBanner />
               <Outlet />
             </ErrorBoundary>
