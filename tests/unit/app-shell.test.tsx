@@ -74,12 +74,6 @@ describe('App shell', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument());
   });
 
-  it('shows an honest holding page for modules not built yet', () => {
-    renderAt('/reports');
-    expect(screen.getByRole('heading', { level: 1, name: 'Reports' })).toBeInTheDocument();
-    expect(screen.getByText('Reports is being built')).toBeInTheDocument();
-  });
-
   it('shows a not-found page for unknown links', () => {
     renderAt('/does-not-exist');
     expect(screen.getByText('This page does not exist')).toBeInTheDocument();

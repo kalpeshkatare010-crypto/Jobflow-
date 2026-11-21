@@ -1,11 +1,11 @@
 import { BrowserRouter, HashRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import type { ReactNode } from 'react';
 import { AppShell } from './layout/AppShell';
-import { NAV_ITEMS } from './layout/nav';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
-import { ModulePage, NotFoundPage } from '../features/modules/ModulePage';
+import { NotFoundPage } from '../features/modules/ModulePage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { AuthCallbackPage, CodeSignInPage } from '../auth/signInExtras';
+import { ReportsPage } from '../features/reports/ReportsPage';
 import { InventoryPage } from '../features/inventory/InventoryPage';
 import { ProductionPage } from '../features/production/ProductionPage';
 import { HelpPage } from '../features/help/HelpPage';
@@ -101,9 +101,7 @@ export function AppRoutes() {
         <Route path="help/*" element={<HelpPage />} />
         <Route path="production/*" element={<ProductionPage />} />
         <Route path="inventory/*" element={<InventoryPage />} />
-        {NAV_ITEMS.filter((item) => !['/', '/settings', '/customers', '/jobs', '/employees', '/workflows', '/help', '/production', '/inventory'].includes(item.path)).map((item) => (
-          <Route key={item.path} path={`${item.path.slice(1)}/*`} element={<ModulePage />} />
-        ))}
+        <Route path="reports/*" element={<ReportsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
