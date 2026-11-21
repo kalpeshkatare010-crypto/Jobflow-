@@ -8,6 +8,11 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '21 Nov 2026',
+    title: 'In-app updates fixed',
+    items: ['Update now works: earlier versions could not save the download, so every update stopped with an error.'],
+  },
+  {
+    date: '21 Nov 2026',
     title: 'One simple plan',
     items: [
       'One plan for the whole business, with no limits on people, workflows or jobs.',

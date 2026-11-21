@@ -74,7 +74,15 @@ export function UpdatesPage() {
             </p>
           ) : state.kind === 'error' ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-critical">{state.message}</p>
+              <div>
+                <p className="text-critical">{state.message}</p>
+                {state.detail ? <p className="mt-1 text-[12px] text-ink-500">Reason: {state.detail}</p> : null}
+                {state.update ? (
+                  <a className="mt-1 inline-block text-[13px] font-medium text-info hover:underline" href={state.update.url} target="_blank" rel="noreferrer">
+                    Download in the browser instead
+                  </a>
+                ) : null}
+              </div>
               {state.update ? (
                 <Button onClick={() => void install(state.update!)} icon={<Download aria-hidden className="size-4" />}>
                   Try again

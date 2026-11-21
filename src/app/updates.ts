@@ -59,18 +59,39 @@ export async function downloadAndInstall(update: AvailableUpdate, onProgress: (f
     if (p.contentLength > 0) onProgress(Math.min(1, p.bytes / p.contentLength));
   });
   try {
-    const result = await Filesystem.downloadFile({
-      url: update.url,
-      path: `updates/${update.name}`,
-      directory: Directory.Cache,
-      recursive: true,
-      progress: true,
-    });
-    const { uri } = await Filesystem.getUri({ path: `updates/${update.name}`, directory: Directory.Cache });
+    // Android's downloader does not create folders ("recursive" is ignored), so make the folder first.
+    // Before build 29 this step was missing and every download failed.
+    await Filesystem.mkdir({ path: 'updates', directory: Directory.Cache, recursive: true }).catch(() => undefined);
+    let path: string;
+    try {
+      const result = await Filesystem.downloadFile({
+        url: update.url,
+        path: `updates/${update.name}`,
+        directory: Directory.Cache,
+        progress: true,
+      });
+      path = result.path ?? (await Filesystem.getUri({ path: `updates/${update.name}`, directory: Directory.Cache })).uri;
+    } catch (error) {
+      throw new UpdateError('download', error);
+    }
     onProgress(1);
-    await FileOpener.open({ filePath: result.path ?? uri, contentType: 'application/vnd.android.package-archive' });
+    try {
+      await FileOpener.open({ filePath: path, contentType: 'application/vnd.android.package-archive' });
+    } catch (error) {
+      throw new UpdateError('install', error);
+    }
   } finally {
     void listener.remove();
+  }
+}
+
+/** Which step failed, plus the phone's own reason (shown small, for support). */
+export class UpdateError extends Error {
+  constructor(
+    readonly step: 'download' | 'install',
+    cause: unknown,
+  ) {
+    super(cause instanceof Error ? cause.message : String(cause));
   }
 }
 
@@ -81,7 +102,7 @@ export type UpdateState =
   | { kind: 'available'; installed: number; update: AvailableUpdate }
   | { kind: 'downloading'; update: AvailableUpdate; fraction: number }
   | { kind: 'installing'; update: AvailableUpdate }
-  | { kind: 'error'; message: string; update?: AvailableUpdate };
+  | { kind: 'error'; message: string; detail?: string; update?: AvailableUpdate };
 
 // One shared update status for the whole app (menu dot, banner, Updates screen).
 let current: UpdateState = { kind: 'idle' };
@@ -114,8 +135,16 @@ async function installNow(update: AvailableUpdate): Promise<void> {
   try {
     await downloadAndInstall(update, (fraction) => set({ kind: 'downloading', update, fraction }));
     set({ kind: 'installing', update });
-  } catch {
-    set({ kind: 'error', message: 'The download did not finish. Check your internet and try again.', update });
+  } catch (error) {
+    const install = error instanceof UpdateError && error.step === 'install';
+    set({
+      kind: 'error',
+      message: install
+        ? 'The update downloaded, but Android did not open the installer. If asked, allow JobFlow to install apps, then try again.'
+        : 'The download did not finish. Check your internet and try again.',
+      detail: error instanceof Error ? error.message : undefined,
+      update,
+    });
   }
 }
 
