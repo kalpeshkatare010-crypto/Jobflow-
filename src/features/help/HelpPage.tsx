@@ -6,7 +6,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { ROLE_LABEL } from '../../auth/types';
 import { useLocalData } from '../../offline/LocalDataProvider';
 import { describeSync } from '../../app/layout/SyncIndicator';
-import { mailtoLink, problemReport, supportContact, whatsappLink } from '../../app/support';
+import { formatPhone, mailtoLink, problemReport, supportContact, whatsappLink } from '../../app/support';
 import { cn } from '../../lib/cn';
 
 interface Question {
@@ -116,6 +116,30 @@ export function HelpPage() {
 
       <Card className="min-w-0 lg:col-span-5">
         <CardHeader title="Contact support" description="Tell us what happened. Your app details are added so we can help faster." />
+        {contact.email || contact.whatsapp ? (
+          <dl className="mb-4 flex flex-col gap-2 rounded-[var(--radius-control)] bg-sunken p-3 text-[14px]">
+            {contact.email ? (
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <dt className="text-[12px] text-ink-500">Email</dt>
+                <dd>
+                  <a className="font-medium break-all text-info hover:underline" href={`mailto:${contact.email}`}>
+                    {contact.email}
+                  </a>
+                </dd>
+              </div>
+            ) : null}
+            {contact.whatsapp ? (
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <dt className="text-[12px] text-ink-500">Phone and WhatsApp</dt>
+                <dd>
+                  <a className="tabular font-medium text-info hover:underline" href={`tel:+${contact.whatsapp}`}>
+                    {formatPhone(contact.whatsapp)}
+                  </a>
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
         <div className="flex flex-col gap-3">
           <Textarea
             label="What went wrong?"

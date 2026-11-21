@@ -18,6 +18,12 @@ export function supportContact(): SupportContact {
   };
 }
 
+/** 918956082106 -> +91 89560 82106 (Indian mobile); other numbers get a plain + prefix. */
+export function formatPhone(digits: string): string {
+  if (digits.length === 12 && digits.startsWith('91')) return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+  return `+${digits}`;
+}
+
 export interface ReportContext {
   version: string;
   mode: 'demo' | 'connected';

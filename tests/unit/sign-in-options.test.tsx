@@ -133,3 +133,13 @@ describe('Help & support', () => {
     expect(whatsappLink('919', 'a b')).toBe('https://wa.me/919?text=a%20b');
   });
 });
+
+describe('support details', () => {
+  it('shows the email address and phone number themselves, not only buttons', async () => {
+    vi.stubEnv('VITE_SUPPORT_EMAIL', 'help@example.test');
+    vi.stubEnv('VITE_SUPPORT_WHATSAPP', '918956000000');
+    renderApp(null, '/help');
+    expect(await screen.findByRole('link', { name: 'help@example.test' })).toHaveAttribute('href', 'mailto:help@example.test');
+    expect(screen.getByRole('link', { name: '+91 89560 00000' })).toHaveAttribute('href', 'tel:+918956000000');
+  });
+});

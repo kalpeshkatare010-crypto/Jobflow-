@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Wordmark } from '../app/layout/Logo';
-import { mailtoLink, supportContact, whatsappLink } from '../app/support';
+import { formatPhone, mailtoLink, supportContact, whatsappLink } from '../app/support';
 
 interface AuthLayoutProps {
   title: string;
@@ -58,14 +58,14 @@ function SupportLine() {
     <p className="mb-3 text-[13px]">
       Need help signing in?{' '}
       {contact.email ? (
-        <a className={link} href={mailtoLink(contact.email, 'JobFlow sign-in help', '')}>
-          Email support
+        <a className={`${link} break-all`} href={mailtoLink(contact.email, 'JobFlow sign-in help', '')}>
+          {contact.email}
         </a>
       ) : null}
       {contact.email && contact.whatsapp ? ' or ' : null}
       {contact.whatsapp ? (
         <a className={link} href={whatsappLink(contact.whatsapp, 'Hi, I need help signing in to JobFlow.')} target="_blank" rel="noreferrer">
-          WhatsApp us
+          WhatsApp {formatPhone(contact.whatsapp)}
         </a>
       ) : null}
     </p>
